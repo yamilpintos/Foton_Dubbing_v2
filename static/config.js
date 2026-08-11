@@ -23,7 +23,7 @@ window.DUBAI_CONFIG = {
   // FALTA CREAR. Consola de Google → Credenciales → Crear credenciales → Clave de API.
   // Restringila por referente HTTP a tus dominios y limitala a Google Picker API.
   // Hasta que esté, el botón de Drive queda apagado.
-  GOOGLE_API_KEY: "",
+  GOOGLE_API_KEY: "AIzaSyC9dHmirFWYjktAkUnzcJVa6Mpeo1SHNM",
 
   // El número del proyecto. Es el prefijo del ID de cliente de arriba.
   GOOGLE_PROJECT_NUMBER: "258756225705",
