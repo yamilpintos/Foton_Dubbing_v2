@@ -29,7 +29,9 @@ python -m http.server 8080
 
 1. Subí esta carpeta a un repositorio de GitHub.
 2. En Render: **New → Static Site**, elegí el repo.
-3. **Build Command:** vacío · **Publish Directory:** `.`
+3. **Build Command:** `sh ./build.sh` · **Publish Directory:** `.`
+4. **Environment:** cargá las tres variables de Google (ver más abajo). Sin ellas el
+   sitio se publica igual, pero el botón de Drive queda apagado.
 
 El `render.yaml` ya deja eso configurado si preferís usarlo como *Blueprint*
 (**New → Blueprint**). Incluye caché largo para `media/`, que es lo pesado.
@@ -80,14 +82,37 @@ necesita el Drive entero porque tiene que *escribir* el resultado. Acá no hace 
 5. **Pantalla de consentimiento de OAuth:** tipo *Externo*. Con `drive.file` no hace falta
    verificación, pero mientras la app esté en modo **Prueba** sólo entran las cuentas que
    cargues como usuarios de prueba. Para abrirla a cualquiera, publicala.
-6. Copiá las dos credenciales a [`static/config.js`](static/config.js).
+6. Cargá las credenciales en Render: panel → **dubai-demo → Environment**, con estos
+   nombres exactos:
 
-### ¿Es seguro que estén en un repo público?
+   | variable | de dónde sale |
+   |---|---|
+   | `GOOGLE_CLIENT_ID` | el ID de cliente del paso 3 |
+   | `GOOGLE_API_KEY` | la clave del paso 4 |
+   | `GOOGLE_PROJECT_NUMBER` | el prefijo numérico del ID de cliente |
 
-Sí, **si hacés el paso 4.** Las dos son públicas por diseño: viajan al navegador de
-cualquiera que abra la página, así que esconderlas no sirve de nada. Lo que las protege
-es la restricción por origen y por referente — sin eso, cualquiera puede gastar tu cuota
-desde otro dominio. El ID de cliente no sirve fuera de los orígenes que autorizaste.
+   No van al repositorio. [`build.sh`](build.sh) las lee durante el build y genera
+   `static/config.js`; el log del deploy dice cuáles llegaron y cuáles no, sin imprimir
+   sus valores.
+
+   > **Para probar en tu máquina** completá [`static/config.js`](static/config.js) a mano
+   > y no lo commitees. Para volver atrás: `git checkout static/config.js`.
+
+### Que estén en "environment" no las vuelve secretas
+
+El navegador necesita esos dos valores para hablar con Google, así que terminan a la
+vista de cualquiera que mire el código de la página. En un sitio sin backend no hay forma
+de evitarlo, y no hace falta: **ninguna de las dos es un secreto**. Lo que se gana con las
+variables de entorno es que dejan de vivir en un repositorio público y que cambiarlas no
+exige un commit.
+
+Lo que de verdad las protege es el paso 4: la restricción por origen y por referente. Sin
+eso, cualquiera puede gastar tu cuota desde otro dominio. El ID de cliente no sirve fuera
+de los orígenes que autorizaste.
+
+El que **sí** es un secreto es el `GOOGLE_CLIENT_SECRET` de `dubai_web`, y por eso no
+aparece en ningún lado de este proyecto: este flujo corre entero en el navegador y no lo
+usa.
 
 ---
 

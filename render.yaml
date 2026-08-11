@@ -5,9 +5,20 @@ services:
   - type: web
     name: dubai-demo
     runtime: static
-    buildCommand: "echo sin build"
+    # El "build" es sólo hornear las credenciales de Google en static/config.js,
+    # porque un sitio estático no puede leer variables de entorno al visitarse.
+    buildCommand: "sh ./build.sh"
     staticPublishPath: .
     pullRequestPreviewsEnabled: false
+    envVars:
+      # sync: false = Render las pide al desplegar y NO quedan escritas en el repo.
+      # Se cargan y se editan en: panel -> dubai-demo -> Environment.
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: GOOGLE_PROJECT_NUMBER
+        sync: false
     headers:
       # el video no cambia nunca: que el navegador y la CDN lo guarden
       - path: /media/*

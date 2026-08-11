@@ -1,32 +1,30 @@
 /* ══════════════════════════════════════════════════════════════════════════════
    Credenciales de Google para el buscador de Drive.
 
-   Las dos son PÚBLICAS por diseño: viajan al navegador de cualquiera que abra la
-   página, así que no son secretos y pueden vivir en un repo público. Lo que las
-   protege NO es esconderlas, es restringirlas en la consola de Google:
+   EN RENDER ESTE ARCHIVO SE PISA. Lo genera `build.sh` durante el build, con las
+   variables de entorno del servicio (panel -> dubai-demo -> Environment). Por eso
+   acá va vacío: las credenciales no viven en el repositorio.
+
+   PARA PROBAR EN TU MÁQUINA podés completarlo a mano — pero no lo commitees así.
+   Para volver atrás:  git checkout static/config.js
+
+   QUE ESTÉN EN "ENVIRONMENT" NO LAS VUELVE SECRETAS. El navegador necesita estos
+   valores para hablar con Google, así que terminan a la vista de cualquiera que
+   mire el código de la página; en un sitio sin backend no hay forma de evitarlo.
+   Lo que de verdad las protege es restringirlas en la consola de Google:
 
      · el ID de cliente sólo funciona desde los orígenes que autorices
      · la clave de API hay que limitarla por "referente HTTP" a tu dominio
 
-   Si dejás la clave de API sin restringir, cualquiera puede usar tu cuota.
    El paso a paso está en el README.
 
    Mientras estén vacías, el botón de Drive se muestra apagado y explica qué falta.
-   Subir el archivo por arrastre sigue funcionando igual.
+   Arrastrar un archivo desde tu disco funciona igual, sin configurar nada.
    ══════════════════════════════════════════════════════════════════════════════ */
 window.DUBAI_CONFIG = {
-  // Proyecto "DubAI" (composed-arbor-503012-j4) — el mismo cliente que usa dubai_web.
-  // Para que sirva ACÁ hay que agregarle los "Orígenes de JavaScript autorizados"
-  // (localhost:8080 y la URL de Render). Sin eso Google rechaza el permiso.
-  GOOGLE_CLIENT_ID: "258756225705-1clagl9d3f1fd8b9t3kub7rclpgs9bou.apps.googleusercontent.com",
-
-  // FALTA CREAR. Consola de Google → Credenciales → Crear credenciales → Clave de API.
-  // Restringila por referente HTTP a tus dominios y limitala a Google Picker API.
-  // Hasta que esté, el botón de Drive queda apagado.
+  GOOGLE_CLIENT_ID: "",
   GOOGLE_API_KEY: "",
-
-  // El número del proyecto. Es el prefijo del ID de cliente de arriba.
-  GOOGLE_PROJECT_NUMBER: "258756225705",
+  GOOGLE_PROJECT_NUMBER: "",
 };
 
 /* OJO: el GOOGLE_CLIENT_SECRET que está en dubai_web/.env NO va acá y NO debe
