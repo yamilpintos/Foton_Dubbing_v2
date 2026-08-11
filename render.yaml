@@ -1,0 +1,20 @@
+# Render — sitio estático. No hay build ni backend: se publica la carpeta tal cual.
+# Si conectás el repo desde el panel de Render, este archivo ya deja todo configurado
+# (Blueprint). Si lo hacés a mano: Static Site · Build Command vacío · Publish Directory "."
+services:
+  - type: web
+    name: dubai-demo
+    runtime: static
+    buildCommand: "echo sin build"
+    staticPublishPath: .
+    pullRequestPreviewsEnabled: false
+    headers:
+      # el video no cambia nunca: que el navegador y la CDN lo guarden
+      - path: /media/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /static/*
+        name: Cache-Control
+        value: public, max-age=3600
+# Sin reglas de rewrite a propósito: es una sola página, no hay ruteo de cliente.
+# Un rewrite /* -> /index.html podría interponerse con /media/resultado.mp4.

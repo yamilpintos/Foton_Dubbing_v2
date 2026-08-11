@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DubAI — doblaje automático de películas</title>
+<meta name="description" content="Subí una película y bajala doblada. El motor adapta cada línea hasta que entra en la boca del actor.">
+<link rel="preconnect" href="">
+<link rel="stylesheet" href="static/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+</head>
+<body>
+
+<div class="aurora" aria-hidden="true"></div>
+<div class="grain" aria-hidden="true"></div>
+
+<header class="top">
+  <div class="brand">
+    <span class="brand-mark">D</span>
+    <span class="brand-name">DubAI</span>
+  </div>
+  <nav class="top-nav">
+    <span class="pill pill-live"><i></i>motor v2</span>
+    <a class="pill" href="#como">Cómo funciona</a>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ══════════════ HERO ══════════════ -->
+  <section class="hero">
+    <p class="eyebrow">Doblaje automático · 74 idiomas</p>
+    <h1 class="hero-title">
+      Subí tu película.<br>
+      <span class="grad">Bajala doblada.</span>
+    </h1>
+    <p class="hero-sub">
+      No es traducción literal: el motor <strong>adapta</strong> cada línea y mide la duración
+      hablada real hasta que entra en la boca del actor.
+    </p>
+  </section>
+
+  <!-- ══════════════ ESCENARIO (3 estados) ══════════════ -->
+  <section class="stage" id="stage">
+
+    <!-- ── 1. soltar el archivo ── -->
+    <div class="panel panel-drop" id="panel-drop">
+      <div class="drop" id="drop" tabindex="0" role="button"
+           aria-label="Elegí un video o arrastralo acá">
+        <div class="drop-ring"></div>
+        <svg class="drop-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5"/>
+          <path d="M3 15v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3"/>
+        </svg>
+        <p class="drop-title">Arrastrá tu película acá</p>
+        <p class="drop-sub">o <span class="link">elegí un archivo</span> — mp4, mov, mkv</p>
+        <input type="file" id="file" accept="video/*" hidden>
+      </div>
+
+      <div class="drop-side">
+        <label class="field">
+          <span class="field-label">Idioma de destino</span>
+          <div class="select-wrap">
+            <select id="lang">
+              <option value="es" selected>Español (rioplatense)</option>
+              <option value="en">Inglés</option>
+              <option value="pt">Portugués (Brasil)</option>
+              <option value="he">Hebreo</option>
+              <option value="fr">Francés</option>
+              <option value="de">Alemán</option>
+              <option value="it">Italiano</option>
+              <option value="ja">Japonés</option>
+            </select>
+          </div>
+          <span class="field-hint" id="lang-hint">Modelo: <code>eleven_v3</code></span>
+        </label>
+
+        <label class="field">
+          <span class="field-label">Voces</span>
+          <div class="segmented" id="voices" role="radiogroup">
+            <button type="button" class="seg on" data-v="clon" role="radio" aria-checked="true">Clonar el elenco</button>
+            <button type="button" class="seg" data-v="catalogo" role="radio" aria-checked="false">Catálogo</button>
+          </div>
+          <span class="field-hint">Clona una vez por película y reusa en los episodios siguientes.</span>
+        </label>
+
+        <div class="note">
+          <strong>Ojo:</strong> esta página es una <b>maqueta</b>. El análisis es una recreación
+          y el resultado es una muestra ya renderizada.
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 2. analizando ── -->
+    <div class="panel panel-work" id="panel-work" hidden>
+      <div class="work-head">
+        <canvas class="thumb" id="thumb" width="192" height="108" aria-hidden="true"></canvas>
+        <div class="work-meta">
+          <p class="work-file" id="w-name">—</p>
+          <p class="work-specs" id="w-specs">—</p>
+        </div>
+        <div class="ring-wrap">
+          <svg class="ring" viewBox="0 0 120 120" aria-hidden="true">
+            <circle class="ring-bg" cx="60" cy="60" r="52"/>
+            <circle class="ring-fg" id="ring" cx="60" cy="60" r="52"/>
+          </svg>
+          <span class="ring-num" id="pct">0<i>%</i></span>
+        </div>
+      </div>
+
+      <div class="bars" id="bars" aria-hidden="true"></div>
+
+      <ol class="steps" id="steps"></ol>
+
+      <div class="console" id="console" aria-live="polite"></div>
+    </div>
+
+    <!-- ── 3. resultado ── -->
+    <div class="panel panel-done" id="panel-done" hidden>
+      <div class="done-head">
+        <span class="badge-ok">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20 6 9 17l-5-5"/>
+          </svg>
+          Doblaje terminado
+        </span>
+        <h2 class="done-title">Tu película, hablada en <span id="done-lang">español</span></h2>
+        <p class="done-sub">
+          <span class="tag-sample">muestra pregrabada</span>
+          Goazen S3E7 · ventana 1:26 → 6:26 · doblada del euskera con el motor de producción
+        </p>
+      </div>
+
+      <div class="player">
+        <video id="video" controls playsinline preload="metadata"
+               poster="media/poster.jpg" src="media/resultado.mp4"></video>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><b>53</b><span>tomas de voz</span></div>
+        <div class="stat"><b>5</b><span>voces clonadas</span></div>
+        <div class="stat"><b>0,115 s</b><span>desincronía media</span></div>
+        <div class="stat"><b>100 %</b><span>del diálogo cubierto</span></div>
+      </div>
+
+      <div class="done-actions">
+        <button class="btn btn-primary btn-lg" id="again">Doblar otra película</button>
+        <a class="btn btn-ghost btn-lg" href="#como">Cómo se hizo</a>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ══════════════ CÓMO FUNCIONA ══════════════ -->
+  <section class="how" id="como">
+    <h2 class="sec-title">Lo que pasa mientras esperás</h2>
+    <p class="sec-sub">
+      Todo automático. Elegís película e idioma y no tocás nada más.
+    </p>
+
+    <div class="cards">
+      <article class="card">
+        <span class="card-n">01</span>
+        <h3>Se estudia la película entera</h3>
+        <p>La diarización corre sobre el episodio <b>completo</b>, nunca por pedazos.
+           Identificar hablantes con cinco minutos sueltos arruina el casting — es una
+           lección que costó cara.</p>
+      </article>
+      <article class="card">
+        <span class="card-n">02</span>
+        <h3>Se clona sólo lo que falta</h3>
+        <p>Una huella de voz por personaje, comparada contra los clones que ya existen.
+           La primera película paga el clonado; las que comparten elenco lo reusan.</p>
+      </article>
+      <article class="card">
+        <span class="card-n">03</span>
+        <h3>Se mira la boca</h3>
+        <p>Un detector dice quién habla en pantalla y si la boca se ve. Cuando se ve,
+           el motor se esfuerza en respetar las <b>bilabiales</b>: la P, la B y la M
+           delatan un doblaje flojo.</p>
+      </article>
+      <article class="card">
+        <span class="card-n">04</span>
+        <h3>El texto cede, el audio no</h3>
+        <p>Si la línea no entra, se reescribe hasta que entre. Nunca se comprime el audio
+           para forzarlo: acelerar la voz suena a lata y se nota más que un desfase.</p>
+      </article>
+      <article class="card">
+        <span class="card-n">05</span>
+        <h3>Se conserva todo lo no-verbal</h3>
+        <p>Risas, gritos, respiraciones y el canto se preservan del original. Son el 92 %
+           de lo que hace que una escena suene viva.</p>
+      </article>
+      <article class="card">
+        <span class="card-n">06</span>
+        <h3>Mezcla y máster de verdad</h3>
+        <p>La voz doblada se mezcla contra la música y los efectos originales, y sale
+           masterizada — no una pista de voz pegada encima.</p>
+      </article>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <span>DubAI · maqueta de demostración</span>
+  <span class="foot-dim">El análisis en pantalla es una recreación del proceso real.</span>
+</footer>
+
+<script src="static/app.js"></script>
+</body>
+</html>

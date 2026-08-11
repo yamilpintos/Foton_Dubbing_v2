@@ -1,0 +1,9 @@
+# basura del sistema
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# el video de muestra SÍ va al repo (Render lo sirve desde ahí).
+# Lo que no debe entrar son los renders originales sin comprimir:
+media/*_original.mp4
+media/*.mov
