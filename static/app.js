@@ -119,7 +119,43 @@ function accept(file){
     return;
   }
   running = true;
-  readMeta(file).then(meta => start(file, meta));
+  readMeta(file).then(meta => start({
+    name: file.name, size: file.size,
+    dur: meta.dur, w: meta.w, h: meta.h,
+  }));
+}
+
+/* Puerta de entrada común. El archivo puede venir de tu disco (arrastrado) o de tu
+   Drive (elegido en el buscador de Google, ver drive.js): de acá para abajo la demo
+   no distingue, porque en los dos casos lo único que tiene son metadatos. */
+window.DubAIDemo = {
+  isRunning: () => running,
+  begin(src){
+    if (running) return;
+    running = true;
+    clearThumb();
+    if (src.thumb) paintThumb(src.thumb);
+    start(src);
+  },
+};
+
+function clearThumb(){
+  const c = el.thumb.getContext("2d");
+  c.clearRect(0, 0, el.thumb.width, el.thumb.height);
+}
+
+/* la miniatura de Drive llega como URL; puede fallar por CORS y no es grave */
+function paintThumb(url){
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  img.referrerPolicy = "no-referrer";
+  img.onload = () => {
+    const c = el.thumb.getContext("2d");
+    const s = Math.max(el.thumb.width / img.width, el.thumb.height / img.height);
+    const w = img.width * s, h = img.height * s;
+    c.drawImage(img, (el.thumb.width - w)/2, (el.thumb.height - h)/2, w, h);
+  };
+  img.src = url;
 }
 
 /* lee duración y resolución, y roba un cuadro para la miniatura — todo local */
@@ -244,14 +280,16 @@ function makeCtx(meta){
 }
 
 /* ══════════════ la corrida ══════════════ */
-function start(file, meta){
-  const ctx    = makeCtx(meta);
+function start(src){
+  const ctx    = makeCtx(src);
   const stages = buildStages(ctx);
 
-  el.wName.textContent  = file.name;
+  el.wName.textContent  = src.name;
+  const size = src.size ? ` · ${(src.size/1e6).toFixed(0)} MB` : "";
+  const orig = src.from === "drive" ? " · desde Drive" : "";
   el.wSpecs.textContent =
-    `${mmss(ctx.dur)} · ${ctx.w}×${ctx.h} · ${(file.size/1e6).toFixed(0)} MB`
-    + ` · ${ctx.win} ventana${ctx.win>1?"s":""}`;
+    `${mmss(ctx.dur)} · ${ctx.w}×${ctx.h}${size}`
+    + ` · ${ctx.win} ventana${ctx.win>1?"s":""}${orig}`;
 
   el.pDrop.hidden = true;
   el.pWork.hidden = false;
@@ -272,7 +310,7 @@ function start(file, meta){
 
   el.console.innerHTML = "";
   startBars();
-  say(`<b>${file.name}</b> — ${mmss(ctx.dur)}`);
+  say(`<b>${src.name}</b> — ${mmss(ctx.dur)}`);
   say(`destino: ${(LANGS[el.lang.value]||LANGS.es).n} · voces: ${voiceMode}`);
 
   // repartir el tiempo total según el peso de cada etapa
@@ -375,6 +413,8 @@ el.again.addEventListener("click", () => {
   el.pWork.hidden = true;
   el.pDrop.hidden = false;
   el.file.value = "";
+  const ds = document.getElementById("drive-status");
+  if (ds){ ds.textContent = ""; ds.className = "drive-status"; }
   setRing(0);
   el.pDrop.scrollIntoView({block:"center", behavior:"smooth"});
 });

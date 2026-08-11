@@ -38,6 +38,59 @@ El plan gratuito de sitios estáticos alcanza de sobra: son ~60 MB y no hay serv
 
 ---
 
+## Conectar tu Google Drive
+
+El botón **"Elegir desde mi Google Drive"** abre el buscador de Google sobre **todo** tu
+Drive —incluidas las unidades compartidas— y trae el archivo que elijas. No descarga el
+video: lee nombre, tamaño, duración, resolución y la miniatura, que es todo lo que la
+demo necesita.
+
+Hasta que cargues las credenciales, el botón se muestra apagado y lo dice. Arrastrar un
+archivo desde tu disco funciona igual, sin configurar nada.
+
+### El permiso que pide, y por qué es el acotado
+
+Pide `drive.file`, no el acceso completo. La app **sólo ve los archivos que elegís a
+mano**; el resto de tu Drive le queda invisible. Podés igual buscar en todo el Drive
+porque quien busca es el Picker de Google, que corre dentro de tu sesión y no de esta
+página.
+
+Eso no es una limitación, es lo que hace que esto sea usable: el permiso completo
+(`drive.readonly`) está clasificado como **restringido** por Google y obliga a verificar
+la app —trámite de semanas, y mientras tanto sólo entran las cuentas cargadas a mano como
+usuarios de prueba—. Es exactamente el muro contra el que choca `dubai_web`, que sí
+necesita el Drive entero porque tiene que *escribir* el resultado. Acá no hace falta.
+
+### Puesta a punto (una vez)
+
+1. [Google Cloud Console](https://console.cloud.google.com/) → elegí un proyecto (podés
+   reusar el de `dubai_web`) o creá uno.
+2. **APIs y servicios → Biblioteca** → habilitá **Google Drive API** y **Google Picker API**.
+3. **Credenciales → Crear credenciales → ID de cliente de OAuth 2.0 → Aplicación web.**
+   En *Orígenes de JavaScript autorizados* agregá —sin barra final:
+   - `http://localhost:8080`
+   - `https://TU-SITIO.onrender.com`
+
+   > Van en **orígenes**, no en *URIs de redireccionamiento*: este flujo devuelve el
+   > permiso a la misma página, no a una URL de vuelta. Dejar el campo de redirección
+   > vacío está bien.
+4. **Credenciales → Crear credenciales → Clave de API.** Editala y en *Restricciones de
+   la aplicación* elegí **Referentes HTTP**, con los mismos dos dominios. En
+   *Restricciones de API*, limitala a **Google Picker API**.
+5. **Pantalla de consentimiento de OAuth:** tipo *Externo*. Con `drive.file` no hace falta
+   verificación, pero mientras la app esté en modo **Prueba** sólo entran las cuentas que
+   cargues como usuarios de prueba. Para abrirla a cualquiera, publicala.
+6. Copiá las dos credenciales a [`static/config.js`](static/config.js).
+
+### ¿Es seguro que estén en un repo público?
+
+Sí, **si hacés el paso 4.** Las dos son públicas por diseño: viajan al navegador de
+cualquiera que abra la página, así que esconderlas no sirve de nada. Lo que las protege
+es la restricción por origen y por referente — sin eso, cualquiera puede gastar tu cuota
+desde otro dominio. El ID de cliente no sirve fuera de los orígenes que autorizaste.
+
+---
+
 ## El video de muestra
 
 `media/resultado.mp4` es la ventana **1:26 → 6:26 de Goazen S3E7**, doblada del euskera al
@@ -72,6 +125,8 @@ Todo vive en tres archivos, sin frameworks:
 | `index.html` | la estructura y los textos |
 | `static/style.css` | el diseño entero |
 | `static/app.js` | la lectura del archivo y la recreación por etapas |
+| `static/drive.js` | el permiso de Google y el buscador sobre tu Drive |
+| `static/config.js` | las dos credenciales de Google, y nada más |
 
 Las perillas que vas a querer mover, todas en `static/app.js`:
 
@@ -83,6 +138,6 @@ Las perillas que vas a querer mover, todas en `static/app.js`:
   Se derivan de la duración real del archivo que soltaste, así que si soltás una
   película de 90 minutos los números crecen solos.
 
-Los avisos de que es una maqueta están en dos lugares y son una línea cada uno:
-el bloque `.note` de `index.html` y el `<span class="tag-sample">` del resultado.
-Si la vas a mostrar como concepto de producto, dejalos.
+Queda un solo aviso de que el resultado es una muestra: el
+`<span class="tag-sample">` del panel final, junto al epígrafe que dice de qué película
+es. Es una línea de `index.html` si lo querés sacar.
