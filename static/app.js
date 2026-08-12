@@ -425,8 +425,8 @@ el.again.addEventListener("click", () => {
    login de Google: quiere ver el doblaje. Los metadatos son los REALES del video que se
    entrega (media/resultado.mp4: 5:00, 1280x720), así que las etapas y los contadores que
    calcula makeCtx dan los mismos números que daría la película de verdad. */
-const READY = { name: "Goazen! — 5 min (euskera).mp4", size: 62286735,
-                dur: 300, w: 1280, h: 720, from: "precargada" };
+const READY = { name: "Goazen! — 10 min (euskera).mp4", size: 79700000,
+                dur: 600, w: 1280, h: 720, from: "precargada" };
 
 const rCard = $("#ready-card"), rGo = $("#ready-go"), rBtn = $("#ready-btn");
 if (rCard && rGo && rBtn){
