@@ -447,3 +447,36 @@ select:focus-visible{outline:none;border-color:var(--acc)}
   }
   html{scroll-behavior:auto}
 }
+
+/* ══ PELÍCULA YA CARGADA ═══════════════════════════════════════════════════════════════
+   El camino de dos clicks de la demo. Lleva el acento naranja de la marca porque tiene que
+   ganarle la atención al botón de Drive: en una demostración nadie quiere ver un login de
+   Google, quiere ver el doblaje. Drive queda abajo, disponible pero secundario.          */
+.ready{ margin:0 clamp(1.5rem,3vw,2rem); }
+.ready-card{
+  display:flex;align-items:center;gap:.85rem;width:100%;text-align:left;
+  background:linear-gradient(180deg,var(--card-2),var(--card));
+  border:1px solid var(--acc);border-radius:12px;
+  padding:.85rem 1.05rem;cursor:pointer;color:inherit;font:inherit;
+  box-shadow:0 0 0 3px rgb(255 157 77 / .10);
+  transition:.18s var(--ease);
+}
+.ready-card:hover{ transform:translateY(-1px); box-shadow:0 0 0 4px rgb(255 157 77 / .16); }
+.ready-ico{
+  flex:none;display:grid;place-items:center;width:34px;height:34px;border-radius:9px;
+  background:rgb(255 157 77 / .14);color:var(--acc);font-size:.8rem;
+}
+.ready-txt{ display:flex;flex-direction:column;gap:2px;min-width:0;flex:1; }
+.ready-name{ font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.ready-meta{ font-size:.82rem;color:var(--tx-mut); }
+.ready-check{ flex:none;opacity:0;color:var(--acc);font-weight:700;transition:.18s var(--ease); }
+.ready-card.on{ background:linear-gradient(180deg,rgb(255 157 77 / .10),var(--card-2)); }
+.ready-card.on .ready-check{ opacity:1; }
+
+.ready-go{ display:flex;align-items:end;gap:.7rem;margin-top:.7rem;flex-wrap:wrap; }
+.ready-lang{ display:flex;flex-direction:column;gap:.3rem;font-size:.82rem;
+             color:var(--tx-dim);flex:1 1 170px;min-width:0; }
+.ready-go .btn{ flex:none; }
+
+/* el "o" que separa de Drive queda más discreto: ya no es una bifurcación pareja */
+.or.or-min{ opacity:.5; }

@@ -419,4 +419,28 @@ el.again.addEventListener("click", () => {
   el.pDrop.scrollIntoView({block:"center", behavior:"smooth"});
 });
 
+
+/* ══════════════ película ya cargada ══════════════
+   El camino de dos clicks. Va donde estaba Drive porque en una demo nadie quiere ver un
+   login de Google: quiere ver el doblaje. Los metadatos son los REALES del video que se
+   entrega (media/resultado.mp4: 5:00, 1280x720), así que las etapas y los contadores que
+   calcula makeCtx dan los mismos números que daría la película de verdad. */
+const READY = { name: "Goazen! — 5 min (euskera).mp4", size: 62286735,
+                dur: 300, w: 1280, h: 720, from: "precargada" };
+
+const rCard = $("#ready-card"), rGo = $("#ready-go"), rBtn = $("#ready-btn");
+if (rCard && rGo && rBtn){
+  rCard.addEventListener("click", () => {
+    const on = rCard.getAttribute("aria-pressed") === "true";
+    rCard.setAttribute("aria-pressed", on ? "false" : "true");
+    rCard.classList.toggle("on", !on);
+    rGo.hidden = on;
+    if (!on) rBtn.focus({preventScroll:true});
+  });
+  rBtn.addEventListener("click", () => {
+    if (window.DubAIDemo?.isRunning()) return;
+    window.DubAIDemo.begin({...READY});
+  });
+}
+
 })();

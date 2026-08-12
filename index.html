@@ -61,6 +61,31 @@
 
       <div class="or"><span>o</span></div>
 
+      <!-- ── película ya cargada: el camino de dos clicks para mostrar el producto ──
+           Va donde antes estaba Drive porque en una demo nadie quiere ver un login de
+           Google: quiere ver el doblaje. Drive sigue abajo, como segunda opción. -->
+      <div class="ready" id="ready">
+        <button type="button" class="ready-card" id="ready-card" aria-pressed="false">
+          <span class="ready-ico" aria-hidden="true">▶</span>
+          <span class="ready-txt">
+            <span class="ready-name" id="ready-name">Goazen! — 5 min</span>
+            <span class="ready-meta" id="ready-meta">euskera · ya cargada</span>
+          </span>
+          <span class="ready-check" aria-hidden="true">✓</span>
+        </button>
+        <div class="ready-go" id="ready-go" hidden>
+          <label class="ready-lang">
+            <span>Doblar a</span>
+            <div class="select-wrap">
+              <select id="ready-lang-sel"><option value="es" selected>Español</option></select>
+            </div>
+          </label>
+          <button type="button" class="btn btn-primary" id="ready-btn">Doblar</button>
+        </div>
+      </div>
+
+      <div class="or or-min"><span>o</span></div>
+
       <button type="button" class="drive-btn" id="drive-btn">
         <svg class="drive-logo" viewBox="0 0 87.3 78" aria-hidden="true">
           <path fill="#0066da" d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0c0 1.55.4 3.1 1.2 4.5z"/>
