@@ -58,6 +58,8 @@ repo (`dubai-demo`) era un sitio estático y no puede correr esto: hay que borra
 panel y dejar que el Blueprint cree el nuevo.
 
 1. Render → New → Blueprint → este repo (o, si el Blueprint ya está conectado, sincronizar).
+   Si en cambio creaste un **Web Service a mano**, también anda: el comando por defecto de Render
+   (`uvicorn app.main:app`) entra por `app/main.py`, que expone la misma app.
 2. En el servicio `doblaje` → Environment: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`,
    `ELEVENLABS_API_KEY` (y `ELEVENLABS_API_KEY_ALT` si hay segunda cuenta).
 3. En Google Cloud, agregar la URI de redirección `https://<nombre>.onrender.com/auth/callback`.
