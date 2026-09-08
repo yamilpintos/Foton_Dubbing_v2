@@ -265,6 +265,22 @@ def carpeta(req: Request, id: str = "root"):
         raise _error_drive(e)
 
 
+@app.get("/api/buscar")
+def buscar(req: Request, q: str = ""):
+    """Carpetas y videos por nombre en todo el Drive, para no bajar nivel por nivel."""
+    s = _sesion(req)
+    q = q.strip()
+    if len(q) < 2:
+        raise HTTPException(400, "escribí al menos dos letras")
+    try:
+        return drive.buscar(_drive(s), q)
+    except HTTPException:
+        raise
+    except Exception as e:
+        print("[api/buscar] " + traceback.format_exc(), flush=True)
+        raise _error_drive(e)
+
+
 @app.get("/api/saldo")
 def saldo(req: Request, cuenta: str | None = None):
     _sesion(req)

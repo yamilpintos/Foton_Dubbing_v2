@@ -100,3 +100,39 @@ def subir(d, ruta: Path, carpeta_id: str) -> str:
     while resp is None:
         _, resp = req.next_chunk()
     return resp["id"]
+
+
+def buscar(d, texto: str, maximo: int = 40) -> dict:
+    """Carpetas y videos cuyo nombre contiene `texto`, en TODO lo que el usuario ve
+    (su unidad y lo compartido). Trae el nombre de la carpeta madre de cada resultado
+    para distinguir homónimos; una llamada extra por carpeta madre distinta."""
+    t = texto.replace("\\", "\\\\").replace("'", "\'")
+    q = (f"name contains '{t}' and trashed = false and "
+         f"(mimeType = '{CARPETA}' or mimeType contains 'video/')")
+    campos = "files(id, name, mimeType, size, thumbnailLink, parents, videoMediaMetadata(durationMillis))"
+    r = d.files().list(q=q, fields=campos, pageSize=maximo, orderBy="folder,name",
+                       supportsAllDrives=True, includeItemsFromAllDrives=True).execute()
+    items = r.get("files", [])
+    nombres = {}
+    for f in items:
+        p = (f.get("parents") or [None])[0]
+        if p and p not in nombres:
+            try:
+                nombres[p] = d.files().get(fileId=p, fields="name", supportsAllDrives=True).execute()["name"]
+            except Exception:
+                nombres[p] = ""
+
+    def madre(f):
+        p = (f.get("parents") or [None])[0]
+        return dict(id=p, nombre=nombres.get(p, "")) if p else None
+
+    carpetas = [dict(id=f["id"], nombre=f["name"], madre=madre(f)) for f in items if f["mimeType"] == CARPETA]
+    videos = []
+    for f in items:
+        if f["mimeType"].startswith("video/"):
+            vm = f.get("videoMediaMetadata") or {}
+            videos.append(dict(id=f["id"], nombre=f["name"], tamano=int(f.get("size", 0) or 0),
+                               duracion_s=int(vm.get("durationMillis", 0) or 0) / 1000,
+                               miniatura=f.get("thumbnailLink"), padre=(f.get("parents") or [None])[0],
+                               madre=madre(f)))
+    return dict(texto=texto, carpetas=carpetas, videos=videos, truncado=len(items) >= maximo)
