@@ -176,7 +176,7 @@ function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('on'); 
 async function api(url, opt){
   const r = await fetch(url, opt);
   if(r.status===401){ yo={conectado:false}; render(); throw new Error('no conectado'); }
-  if(!r.ok){ let d; try{ d=(await r.json()).detail; }catch(e){} throw new Error(d || r.statusText); }
+  if(!r.ok){ let d; try{ d=(await r.json()).detail; }catch(e){} throw new Error(d || r.statusText || ('el servidor respondió HTTP '+r.status)); }
   return r.json();
 }
 

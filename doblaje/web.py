@@ -228,9 +228,41 @@ def me(req: Request):
     return dict(conectado=True, email=s.get("email", ""), nombre=s.get("nombre", ""))
 
 
+def _error_drive(e: Exception) -> HTTPException:
+    """Los errores de la API de Google, en cristiano y con qué hacer. Sin esto la página
+    muestra 'No se pudo leer la carpeta:' y nada más."""
+    from googleapiclient.errors import HttpError
+    if isinstance(e, HttpError):
+        try:
+            err = json.loads(e.content.decode("utf-8", "replace")).get("error", {})
+            msg = err.get("message", "") if isinstance(err, dict) else str(err)
+            razones = [x.get("reason", "") for x in (err.get("errors", []) if isinstance(err, dict) else [])]
+        except Exception:
+            msg, razones = str(e), []
+        st = getattr(getattr(e, "resp", None), "status", 0)
+        if st == 403 and ("accessNotConfigured" in razones or "has not been used" in msg or "is disabled" in msg):
+            return HTTPException(503, "La API de Google Drive no está habilitada en tu proyecto de Google Cloud. "
+                                      "Habilitala en https://console.cloud.google.com/apis/library/drive.googleapis.com "
+                                      "(con el mismo proyecto del cliente OAuth) y volvé a intentar en un minuto.")
+        if st in (401, 403) and "insufficient" in msg.lower():
+            return HTTPException(403, "Google no dio permiso sobre Drive. Desconectá (✕ arriba a la derecha) y volvé a "
+                                      "conectar aceptando el acceso a Drive en la pantalla de Google.")
+        if st == 401:
+            return HTTPException(401, "no conectado")
+        return HTTPException(502, f"Google Drive respondió {st}: {msg or e}")
+    return HTTPException(500, f"{type(e).__name__}: {e}")
+
+
 @app.get("/api/carpeta")
 def carpeta(req: Request, id: str = "root"):
-    return drive.listar(_drive(_sesion(req)), id)
+    s = _sesion(req)
+    try:
+        return drive.listar(_drive(s), id)
+    except HTTPException:
+        raise
+    except Exception as e:
+        print("[api/carpeta] " + traceback.format_exc(), flush=True)
+        raise _error_drive(e)
 
 
 @app.get("/api/saldo")
@@ -252,14 +284,20 @@ async def estimar(req: Request):
     s = _sesion(req)
     body = await req.json()
     ids = list(dict.fromkeys(body.get("videos", [])))
-    d = _drive(s)
     videos, total = [], 0.0
-    for vid in ids:
-        f = drive.meta(d, vid)
-        dur = int((f.get("videoMediaMetadata") or {}).get("durationMillis", 0) or 0) / 1000
-        videos.append(dict(id=vid, nombre=f["name"], duracion_s=dur, creditos=estimar_creditos(dur),
-                           demasiado_largo=dur > C.MAX_MIN_VIDEO * 60, sin_duracion=dur == 0))
-        total += dur
+    try:
+        d = _drive(s)
+        for vid in ids:
+            f = drive.meta(d, vid)
+            dur = int((f.get("videoMediaMetadata") or {}).get("durationMillis", 0) or 0) / 1000
+            videos.append(dict(id=vid, nombre=f["name"], duracion_s=dur, creditos=estimar_creditos(dur),
+                               demasiado_largo=dur > C.MAX_MIN_VIDEO * 60, sin_duracion=dur == 0))
+            total += dur
+    except HTTPException:
+        raise
+    except Exception as e:
+        print("[api/estimar] " + traceback.format_exc(), flush=True)
+        raise _error_drive(e)
     creditos = estimar_creditos(total)
     out = dict(videos=videos, total_s=total, creditos=creditos, cr_por_min=C.CR_POR_MIN)
     try:
@@ -342,15 +380,21 @@ async def doblar(req: Request):
                                  f"Es una guarda de gasto; se sube con DOBLAJE_MAX_POR_DIA.")
 
     # ---- guardas 2 y 5: metadatos, largo y saldo ----
-    d = _drive(s)
     metas, total = [], 0.0
-    for vid in ids:
-        f = drive.meta(d, vid)
-        dur = int((f.get("videoMediaMetadata") or {}).get("durationMillis", 0) or 0) / 1000
-        if dur > C.MAX_MIN_VIDEO * 60:
-            raise HTTPException(400, f"{f['name']} dura {dur/60:.0f} min; el máximo de ElevenLabs es {C.MAX_MIN_VIDEO}")
-        metas.append((f, dur))
-        total += dur
+    try:
+        d = _drive(s)
+        for vid in ids:
+            f = drive.meta(d, vid)
+            dur = int((f.get("videoMediaMetadata") or {}).get("durationMillis", 0) or 0) / 1000
+            if dur > C.MAX_MIN_VIDEO * 60:
+                raise HTTPException(400, f"{f['name']} dura {dur/60:.0f} min; el máximo de ElevenLabs es {C.MAX_MIN_VIDEO}")
+            metas.append((f, dur))
+            total += dur
+    except HTTPException:
+        raise
+    except Exception as e:
+        print("[api/doblar] " + traceback.format_exc(), flush=True)
+        raise _error_drive(e)
     try:
         libres = cuenta.saldo()["libres"]
     except DubbingError as e:
