@@ -1,9 +1,19 @@
-# basura del sistema
-Thumbs.db
-desktop.ini
-.DS_Store
-
-# el video de muestra SÍ va al repo (Render lo sirve desde ahí).
-# Lo que no debe entrar son los renders originales sin comprimir:
-media/*_original.mp4
-media/*.mov
+# secretos — NUNCA
+.env
+*.env
+!.env.example
+*client_secret*.json
+*credentials*.json
+*.pem
+*.key
+# trabajo y salidas pesadas
+_trabajo/
+*.mp4
+*.mov
+*.wav
+!.env.example
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/

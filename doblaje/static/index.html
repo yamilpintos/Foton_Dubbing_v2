@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Doblaje</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#F3F4F6; --panel:#FFFFFF; --ink:#151A21; --ink2:#4A5563; --mute:#7C8794;
+  --line:#E2E6EB; --line2:#CBD2DA; --accent:#E4572E; --accent2:#C4451F; --accent-soft:#FDE9E2;
+  --ok:#1E8E5A; --ok-soft:#E3F5EC; --warn:#B7791F; --warn-soft:#FBF1DC; --bad:#B3261E; --bad-soft:#F9E3E1;
+  --sel:#2F6FED; --sel-soft:#E6EEFD; --surface-2:#F6F7F9;
+  --r:12px; --shadow:0 1px 2px rgba(20,26,33,.06),0 8px 24px -12px rgba(20,26,33,.18);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Manrope,"Segoe UI",system-ui,sans-serif;font-size:15px;line-height:1.5}
+h1,h2,h3{font-family:Sora,Manrope,sans-serif;margin:0;letter-spacing:-.01em}
+button{font:inherit;cursor:pointer;border:0;border-radius:10px}
+button:focus-visible,a:focus-visible,.card:focus-visible{outline:3px solid var(--sel);outline-offset:2px}
+.top{background:var(--ink);color:#fff;padding:0 28px;height:64px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:10}
+.logo{display:flex;align-items:center;gap:12px;font-family:Sora;font-weight:700;font-size:1.25rem;color:#fff;text-decoration:none}
+.logo svg{width:34px;height:34px}
+.top .sp{flex:1}
+.chip{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:6px 12px 6px 8px;font-size:.88rem}
+.chip .av{width:24px;height:24px;border-radius:50%;background:var(--accent);display:grid;place-items:center;font-weight:700;font-size:.75rem}
+.chip button{background:transparent;color:#fff;opacity:.7;padding:2px 4px}
+.chip button:hover{opacity:1}
+main{max-width:1320px;margin:0 auto;padding:28px;display:grid;grid-template-columns:1fr 400px;gap:24px;align-items:start}
+main.uno{grid-template-columns:1fr}
+@media(max-width:1020px){main{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.panel h2{font-size:1.05rem;font-weight:600;padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+.panel h2 .n{margin-left:auto;font-family:Manrope;font-weight:600;font-size:.8rem;color:var(--mute)}
+.body{padding:20px}
+.btn{display:inline-flex;align-items:center;gap:10px;padding:12px 20px;font-weight:700;border-radius:10px;transition:transform .08s,background .15s;text-decoration:none}
+.btn:active{transform:translateY(1px)}
+.btn.g{background:#fff;color:var(--ink);border:1px solid var(--line2);box-shadow:var(--shadow)}
+.btn.g:hover{background:#F8F9FB}
+.btn.p{background:var(--accent);color:#fff;justify-content:center;padding:14px 22px;font-size:1rem}
+.btn.p:hover{background:var(--accent2)}
+.btn.p:disabled{background:#D9DDE3;color:#8A93A0;cursor:not-allowed}
+.btn.w{width:100%}
+/* landing */
+.landing{display:grid;grid-template-columns:1.2fr 1fr;gap:24px;align-items:stretch}
+@media(max-width:900px){.landing{grid-template-columns:1fr}}
+.hero{border-radius:var(--r);background:#14191F;color:#fff;padding:32px;display:flex;flex-direction:column;justify-content:flex-end;min-height:360px;box-shadow:var(--shadow)}
+.hero .eyebrow{font-family:Sora;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:#F4B4A0;font-weight:600;margin-bottom:8px}
+.hero h1{font-size:1.9rem;font-weight:700;margin-bottom:10px}
+.hero p{color:#D6DBE1;max-width:52ch;margin:0 0 10px}
+.hero ul{color:#B9C1CA;margin:8px 0 0;padding-left:18px;font-size:.9rem}
+.side-card{display:flex;flex-direction:column;gap:14px;padding:26px}
+.side-card h2{padding:0;border:0;font-size:1.25rem}
+.side-card p{color:var(--ink2);margin:0}
+.side-card ol{padding-left:20px;color:var(--ink2);margin:0;font-size:.9rem}
+.side-card li{margin:6px 0}
+code{background:#F0F2F5;border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:.85em}
+details summary{cursor:pointer;font-weight:600;color:var(--sel)}
+/* migas + grillas */
+.migas{display:flex;flex-wrap:wrap;align-items:center;gap:4px;padding:12px 20px;border-bottom:1px solid var(--line);font-size:.92rem}
+.migas button{background:transparent;color:var(--sel);padding:4px 6px;font-weight:600}
+.migas button:hover{background:var(--sel-soft)}
+.migas .cur{font-weight:700;padding:4px 6px}
+.migas .sep{color:var(--mute)}
+.migas .atajos{margin-left:auto;display:flex;gap:6px}
+.migas .atajos button{color:var(--ink2);border:1px solid var(--line);font-weight:600;font-size:.82rem}
+.sec{font-family:Sora;font-size:.72rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin:4px 0 12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:22px}
+.grid.v{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+.card{background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:0;text-align:left;cursor:pointer;transition:border-color .12s,box-shadow .12s,transform .08s;overflow:hidden;position:relative}
+.card:hover{border-color:var(--line2);box-shadow:var(--shadow);transform:translateY(-1px)}
+.card.f{display:flex;align-items:center;gap:10px;padding:12px}
+.card.f svg{flex:none;width:28px;height:28px;color:#F4B740}
+.card.f .nm{font-weight:600;font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card.v .th{aspect-ratio:16/9;background:#1D232B;display:grid;place-items:center;overflow:hidden}
+.card.v .th img{width:100%;height:100%;object-fit:cover}
+.card.v .th svg{width:36px;height:36px;color:#5B6572}
+.card.v .meta{padding:10px 12px}
+.card.v .nm{font-weight:600;font-size:.88rem;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card.v .dur{color:var(--mute);font-size:.8rem;margin-top:4px;font-variant-numeric:tabular-nums}
+.card.v .tick{position:absolute;top:8px;left:8px;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.92);border:2px solid #fff;display:grid;place-items:center;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.card.v .tick svg{width:14px;height:14px;opacity:0}
+.card.v.on{border-color:var(--sel);box-shadow:0 0 0 3px var(--sel-soft)}
+.card.v.on .tick{background:var(--sel);border-color:#fff}
+.card.v.on .tick svg{opacity:1;color:#fff}
+.empty{color:var(--mute);padding:28px;text-align:center}
+.spin{display:inline-block;width:18px;height:18px;border:2.5px solid var(--line2);border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite;vertical-align:middle}
+@keyframes sp{to{transform:rotate(360deg)}}
+/* lateral */
+.side{position:sticky;top:88px;display:flex;flex-direction:column;gap:20px}
+.sel-list{display:flex;flex-direction:column;gap:6px;max-height:180px;overflow:auto}
+.sel-list div{display:flex;align-items:center;gap:8px;font-size:.86rem;background:var(--sel-soft);border-radius:8px;padding:6px 10px}
+.sel-list div span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sel-list button{background:transparent;color:var(--ink2);padding:0 4px;font-size:1rem}
+.hint{font-size:.8rem;color:var(--mute);margin-top:10px;line-height:1.45}
+.cfg{display:flex;flex-direction:column;gap:14px}
+.cfg label{display:flex;flex-direction:column;gap:5px;font-size:.8rem;color:var(--ink2);font-weight:600}
+.cfg input,.cfg select{font:inherit;padding:9px 11px;border:1px solid var(--line2);border-radius:8px;font-size:.9rem;background:#fff}
+.cfg .dos{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.motor{display:flex;flex-direction:column;gap:8px}
+.motor label{flex-direction:row;align-items:flex-start;gap:10px;background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;font-weight:500;color:var(--ink)}
+.motor label.on{border-color:var(--sel);background:var(--sel-soft)}
+.motor label.off{opacity:.6;cursor:not-allowed}
+.motor input{margin-top:3px;accent-color:var(--sel)}
+.motor .t{font-weight:700;font-size:.9rem;display:flex;gap:8px;align-items:center}
+.motor .d{font-size:.78rem;color:var(--ink2);line-height:1.4}
+.tag{font-family:Sora;font-size:.62rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:2px 7px;border-radius:999px;background:var(--warn-soft);color:var(--warn)}
+.rango{display:flex;align-items:center;gap:12px}
+.rango input[type=range]{flex:1;accent-color:var(--accent);padding:0;border:0}
+.rango b{font-family:Sora;min-width:2ch;text-align:right}
+.est{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:4px}
+.est div{background:#fff;padding:12px 14px}
+.est .k{font-family:Sora;font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
+.est .v{font-family:Sora;font-size:1.2rem;font-weight:700;margin-top:3px;font-variant-numeric:tabular-nums}
+.est .v small{font-size:.72rem;color:var(--mute);font-weight:500}
+.est div.ac .v{color:var(--accent2)}
+.est div.ok .v{color:var(--ok)}
+.est div.bad .v{color:var(--bad)}
+.aviso{font-size:.82rem;padding:10px 12px;border-radius:8px;background:var(--warn-soft);color:var(--warn);border:1px solid #EED9AE;margin-top:10px}
+.aviso.bad{background:var(--bad-soft);color:var(--bad);border-color:#E9C4C1}
+/* trabajos */
+.jobs{display:flex;flex-direction:column;max-height:520px;overflow:auto}
+.job{padding:14px 20px;border-bottom:1px solid var(--line)}
+.job:last-child{border-bottom:0}
+.job .h{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.job .nm{font-weight:600;font-size:.88rem;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.st{font-size:.72rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:999px;white-space:nowrap}
+.st.cola{background:#EEF0F3;color:var(--ink2)}.st.proc{background:var(--sel-soft);color:var(--sel)}
+.st.listo{background:var(--ok-soft);color:var(--ok)}.st.revisar{background:var(--warn-soft);color:var(--warn)}
+.st.error,.st.interrumpido,.st.cancelado{background:var(--bad-soft);color:var(--bad)}
+.bar{height:6px;background:#EDEFF2;border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .6s}
+.job.listo .bar i{background:var(--ok)}.job.revisar .bar i{background:var(--warn)}
+.job .et{font-size:.8rem;color:var(--ink2);margin-top:6px;display:flex;justify-content:space-between;gap:10px}
+.job .lg{font-family:ui-monospace,Consolas,monospace;font-size:.72rem;color:var(--mute);margin-top:6px;white-space:pre-wrap;max-height:64px;overflow:hidden}
+.job a{color:var(--sel);font-weight:600;font-size:.82rem;text-decoration:none;white-space:nowrap}
+.job a:hover{text-decoration:underline}
+.job .g{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.job .g span{font-size:.7rem;padding:2px 7px;border-radius:6px;background:var(--ok-soft);color:var(--ok)}
+.job .g span.w{background:var(--warn-soft);color:var(--warn)}
+.job .g span.m{background:#EEF0F3;color:var(--ink2)}
+.job .cancel{background:transparent;color:var(--bad);font-weight:700;font-size:.8rem;padding:2px 6px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 18px;border-radius:10px;box-shadow:var(--shadow);font-size:.9rem;opacity:0;pointer-events:none;transition:opacity .2s;z-index:20}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="logo" href="./">
+    <svg viewBox="0 0 34 34" fill="none"><circle cx="17" cy="17" r="15" stroke="#E4572E" stroke-width="2.5"/><path d="M11 12h8a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3h-4l-4 3v-3a3 3 0 0 1-3-3v-3a3 3 0 0 1 3-3z" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg>
+    Doblaje
+  </a>
+  <div class="sp"></div>
+  <div id="user"></div>
+</header>
+
+<main id="main"></main>
+<div class="toast" id="toast"></div>
+
+<script>
+// ★ Todas las URLs son relativas ('api/config', no '/api/config'): la página no sabe
+//   en qué prefijo la montan. Sola: localhost:8790/ ; en el portal: /doblaje/.
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtDur = s => { if(!s) return ''; s=Math.round(s); const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60; return (h?h+':':'')+String(m).padStart(h?2:1,'0')+':'+String(x).padStart(2,'0'); };
+const fmtGB = b => b>=1e9 ? (b/1e9).toFixed(2)+' GB' : (b/1e6).toFixed(0)+' MB';
+const fmtN = n => n==null ? '—' : Math.round(n).toLocaleString('es-AR');
+let cfg={}, yo={}, carpeta=null, sel=new Map(), cargando=false, pollTimer=null, estTimer=null, est=null;
+const ICO_FOLDER = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 6.5A2.5 2.5 0 0 1 5.5 4h4l2 2h7A2.5 2.5 0 0 1 21 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z"/></svg>';
+const ICO_VIDEO = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 5h11a2 2 0 0 1 2 2v2.4l4-2.4v10l-4-2.4V17a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></svg>';
+const ICO_TICK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>';
+const GOOGLE_SVG = '<svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34.1 6.1 29.3 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.2-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34.1 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C41.1 35.4 44 30 44 24c0-1.2-.1-2.4-.4-3.5z"/></svg>';
+
+function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('on'); setTimeout(()=>t.classList.remove('on'),2800); }
+async function api(url, opt){
+  const r = await fetch(url, opt);
+  if(r.status===401){ yo={conectado:false}; render(); throw new Error('no conectado'); }
+  if(!r.ok){ let d; try{ d=(await r.json()).detail; }catch(e){} throw new Error(d || r.statusText); }
+  return r.json();
+}
+
+async function init(){
+  try{ cfg = await api('api/config'); yo = await api('api/me'); }catch(e){ cfg={}; yo={conectado:false}; }
+  render();
+  if(yo.conectado){ navegar('root'); pollTrabajos(); }
+}
+
+function render(){
+  $('#user').innerHTML = yo.conectado ? `<span class="chip"><span class="av">${esc((yo.nombre||yo.email||'?')[0].toUpperCase())}</span>${esc(yo.email)}<button title="Desconectar" onclick="salir()">✕</button></span>` : '';
+  const m = $('#main');
+  if(!yo.conectado){
+    m.className='uno';
+    const setup = cfg.google_configurado
+      ? `<a class="btn g" href="auth/login">${GOOGLE_SVG}Conectar Google Drive</a>`
+      : `<details><summary>Para usarlo hace falta configurar Google (una sola vez)</summary><ol style="margin-top:10px">
+          <li>En <a href="https://console.cloud.google.com/apis/credentials" target="_blank">Google Cloud → Credenciales</a>, habilitá <b>Google Drive API</b>.</li>
+          <li>Pantalla de consentimiento: tipo <b>Externo</b>, tu mail como usuario de prueba.</li>
+          <li>Credenciales → <b>ID de cliente OAuth</b> → Aplicación web → URI de redirección: <code>${esc(cfg.callback||'')}</code></li>
+          <li>Copiá ID y secreto a <code>.env</code> (<code>GOOGLE_CLIENT_ID</code>, <code>GOOGLE_CLIENT_SECRET</code>) y reiniciá.</li></ol></details>`;
+    m.innerHTML = `<div class="landing">
+      <div class="hero">
+        <div class="eyebrow">Dubbing v2 · verificado video por video</div>
+        <h1>Doblá los videos de tu Drive a otro idioma</h1>
+        <p>Elegís la carpeta y los videos, el idioma y la fuerza de clonado, ves cuánto cuesta contra el saldo real, y confirmás. Cada video vuelve a Drive doblado, en una carpeta <b>doblaje</b> al lado del original, con un informe de qué quedó sin traducir.</p>
+        <ul>
+          <li>La fuerza de clonado baja (1) evita que el original se cuele en susurros y gritos.</li>
+          <li>Los archivos grandes se comprimen antes de subir; el cobro es el mismo.</li>
+          <li>Se verifica acústicamente contra el original, segmento por segmento.</li>
+        </ul>
+      </div>
+      <div class="panel side-card">
+        <h2>Empezar</h2>
+        <p>Conectás tu Google Drive y elegís qué doblar. Nada se cobra hasta que confirmás con el número a la vista.</p>
+        ${setup}
+        ${cfg.cuentas&&cfg.cuentas.length ? '' : '<p class="aviso bad">Falta <code>ELEVENLABS_API_KEY</code> en el servidor.</p>'}
+        ${cfg.ffmpeg===false ? '<p class="aviso bad">No encuentro <code>ffmpeg</code> en el servidor (variable <code>FFMPEG</code>).</p>' : ''}
+      </div>
+    </div>`;
+    return;
+  }
+  m.className='';
+  const motores = (cfg.motores||[]).map((x,i)=>`<label class="${x.disponible?(i===0?'on':''):'off'}"><input type="radio" name="motor" value="${x.id}" ${x.disponible?(i===0?'checked':''):'disabled'} onchange="motorCambio()"><span><span class="t">${esc(x.nombre)}${x.disponible?'':' <span class="tag">pronto</span>'}</span><span class="d">${esc(x.detalle)}</span></span></label>`).join('');
+  const opts = (l, def) => l.map(([c,n])=>`<option value="${c}" ${c===def?'selected':''}>${esc(n)}</option>`).join('');
+  const cuentas = (cfg.cuentas||[]).length>1 ? `<label>Cuenta de ElevenLabs<select id="cuenta" onchange="estimar()">${cfg.cuentas.map(c=>`<option value="${c.id}">${esc(c.etiqueta)}</option>`).join('')}</select></label>` : '';
+  m.innerHTML = `
+    <section class="panel" id="drive">
+      <div class="migas" id="migas"></div>
+      <div class="body" id="contenido"><div class="empty"><span class="spin"></span></div></div>
+    </section>
+    <aside class="side">
+      <div class="panel"><h2>Selección <span class="n" id="seln">0 videos</span></h2><div class="body">
+        <div class="sel-list" id="sellist"></div>
+        <p class="hint" id="selhint">Tocá los videos en la carpeta de la izquierda.</p>
+      </div></div>
+      <div class="panel"><h2>Cómo doblar</h2><div class="body cfg">
+        <div class="motor">${motores}</div>
+        <div class="dos">
+          <label>Idioma de origen<select id="origen">${opts(cfg.idiomas_origen||[], 'es')}</select></label>
+          <label>Idioma de destino<select id="destino" onchange="estimar();clonHint()">${opts(cfg.idiomas_destino||[], 'pt-BR')}</select></label>
+        </div>
+        <label>Fuerza de clonado <span class="rango"><input type="range" id="clon" min="0" max="10" step="1" value="${cfg.clonacion_default??1}" oninput="clonHint()"><b id="clonv">${cfg.clonacion_default??1}</b></span><span class="hint" id="clonh" style="margin-top:0"></span></label>
+        <label>Nombres propios (ayudan a transcribir y traducir)<input id="keyterms" placeholder="Sara, Diego, Karen" value=""></label>
+        ${cuentas}
+      </div></div>
+      <div class="panel"><h2>Costo <span class="n" id="estn"></span></h2><div class="body">
+        <div class="est" id="est"><div><div class="k">Duración</div><div class="v">—</div></div><div class="ac"><div class="k">Créditos</div><div class="v">—</div></div><div><div class="k">Saldo</div><div class="v">—</div></div><div><div class="k">Alcanza</div><div class="v">—</div></div></div>
+        <div id="estaviso"></div>
+        <button class="btn p w" id="go" disabled onclick="doblar()" style="margin-top:14px">Doblar</button>
+        <p class="hint">Se cobra por segundo de fuente, una sola vez, al terminar el doblaje. El resultado va a una carpeta <b>doblaje</b> dentro de la carpeta de cada video, con un informe.</p>
+      </div></div>
+      <div class="panel"><h2>Trabajos <span class="n" id="jobn"></span></h2>
+        <div class="jobs" id="jobs"><div class="empty" style="padding:18px">Todavía no hay trabajos.</div></div></div>
+    </aside>`;
+  clonHint(); renderSel();
+}
+
+function esIngles(){ return ($('#destino')?.value||'').toLowerCase().startsWith('en'); }
+function clonHint(){
+  const v = +($('#clon')?.value ?? 1); const h=$('#clonh'); if($('#clonv')) $('#clonv').textContent=v;
+  if(!h) return;
+  let t = v<=2 ? 'Suena natural en el idioma destino y <b>no deja pasar el original</b>. Se parece menos al actor.'
+        : v<=5 ? 'Punto medio: más parecido al actor, con algo de riesgo de que el original se cuele en susurros y gritos.'
+        : 'Como el valor de fábrica de ElevenLabs (7): <b>copia el audio original</b> en los segmentos difíciles. No recomendado.';
+  // ★ inglés: a más clonado, más acento del actor original. De 7 para arriba la pronunciación sale mal.
+  if(esIngles() && v>=7) t += '<span class="aviso bad" style="display:block">Destino inglés con clonado de 7 a 10: <b>la pronunciación va a ser mala</b>, sale con el acento del actor original. Bajalo a 3 o menos.</span>';
+  else if(esIngles() && v>=3) t += '<span class="aviso" style="display:block">Para inglés, cuanto más alto el clonado, más acento del original. Si suena forzado, bajalo.</span>';
+  h.innerHTML = t;
+}
+function motorCambio(){ document.querySelectorAll('.motor label').forEach(l=>l.classList.toggle('on', l.querySelector('input').checked)); }
+
+async function navegar(id){
+  if(cargando) return; cargando=true;
+  $('#contenido').innerHTML='<div class="empty"><span class="spin"></span></div>';
+  try{
+    carpeta = await api('api/carpeta?id='+encodeURIComponent(id));
+    const migas = carpeta.migas.map((m,i)=> i<carpeta.migas.length-1 ? `<button onclick="navegar('${m.id}')">${esc(m.nombre)}</button><span class="sep">›</span>` : `<span class="cur">${esc(m.nombre)}</span>`).join('');
+    $('#migas').innerHTML = migas + `<span class="atajos"><button onclick="navegar('root')">Mi unidad</button><button onclick="navegar('compartidos')">Compartido conmigo</button></span>`;
+    let h='';
+    if(carpeta.carpetas.length){ h+=`<div class="sec">Carpetas</div><div class="grid">`+carpeta.carpetas.map(c=>`<button class="card f" onclick="navegar('${c.id}')">${ICO_FOLDER}<span class="nm" title="${esc(c.nombre)}">${esc(c.nombre)}</span></button>`).join('')+`</div>`; }
+    if(carpeta.videos.length){
+      h+=`<div class="sec">Videos <span style="font-weight:500;letter-spacing:0;text-transform:none;color:var(--mute)">· tocá para elegir</span></div><div class="grid v">`+carpeta.videos.map(v=>`
+        <button class="card v ${sel.has(v.id)?'on':''}" data-id="${v.id}" onclick="toggle('${v.id}')" title="${esc(v.nombre)}">
+          <div class="th">${v.miniatura?`<img src="${esc(v.miniatura)}" alt="" loading="lazy" referrerpolicy="no-referrer">`:ICO_VIDEO}</div>
+          <div class="tick">${ICO_TICK}</div>
+          <div class="meta"><div class="nm">${esc(v.nombre)}</div><div class="dur">${fmtDur(v.duracion_s)}${v.duracion_s&&v.tamano?' · ':''}${v.tamano?fmtGB(v.tamano):''}</div></div>
+        </button>`).join('')+`</div>`;
+    }
+    if(!h) h='<div class="empty">Esta carpeta no tiene subcarpetas ni videos.</div>';
+    $('#contenido').innerHTML=h;
+  }catch(e){ $('#contenido').innerHTML=`<div class="empty">No se pudo leer la carpeta: ${esc(e.message)}</div>`; }
+  cargando=false;
+}
+function toggle(id){
+  const v = carpeta.videos.find(x=>x.id===id); if(!v) return;
+  if(sel.has(id)) sel.delete(id); else sel.set(id, v);
+  document.querySelectorAll(`.card.v[data-id="${id}"]`).forEach(c=>c.classList.toggle('on', sel.has(id)));
+  renderSel(); estimar();
+}
+function renderSel(){
+  if(!$('#seln')) return;
+  const n=sel.size; $('#seln').textContent = n===1?'1 video':n+' videos';
+  $('#sellist').innerHTML = [...sel.values()].map(v=>`<div><span title="${esc(v.nombre)}">${esc(v.nombre)}</span><span style="color:var(--mute);font-size:.78rem">${fmtDur(v.duracion_s)}</span><button onclick="toggle('${v.id}')" title="Quitar">✕</button></div>`).join('');
+  $('#selhint').hidden = n>0;
+  actualizarBoton();
+}
+function actualizarBoton(){
+  const b=$('#go'); if(!b) return; const n=sel.size;
+  b.disabled = n===0 || !est || est.alcanza===false || (est.videos||[]).some(v=>v.demasiado_largo);
+  b.textContent = n ? `Doblar ${n===1?'1 video':n+' videos'} a ${$('#destino')?.selectedOptions[0]?.textContent||''}` : 'Doblar';
+}
+function estimar(){
+  clearTimeout(estTimer); est=null; actualizarBoton();
+  const box=$('#est'); if(!box) return;
+  if(!sel.size){ box.innerHTML='<div><div class="k">Duración</div><div class="v">—</div></div><div class="ac"><div class="k">Créditos</div><div class="v">—</div></div><div><div class="k">Saldo</div><div class="v">—</div></div><div><div class="k">Alcanza</div><div class="v">—</div></div>'; $('#estaviso').innerHTML=''; $('#estn').textContent=''; return; }
+  $('#estn').innerHTML='<span class="spin"></span>';
+  estTimer=setTimeout(async()=>{
+    try{
+      est = await api('api/estimar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({videos:[...sel.keys()], cuenta:$('#cuenta')?.value})});
+      const alc = est.alcanza;
+      box.innerHTML = `<div><div class="k">Duración</div><div class="v">${fmtDur(est.total_s)}</div></div>
+        <div class="ac"><div class="k">Créditos</div><div class="v">${fmtN(est.creditos)} <small>~${fmtN(est.cr_por_min)}/min</small></div></div>
+        <div><div class="k">Saldo${est.plan?' · '+esc(est.plan):''}</div><div class="v">${fmtN(est.saldo)}</div></div>
+        <div class="${alc===true?'ok':alc===false?'bad':''}"><div class="k">Alcanza</div><div class="v">${alc===true?'Sí':alc===false?'No':'?'}</div></div>`;
+      const largos = est.videos.filter(v=>v.demasiado_largo).map(v=>v.nombre);
+      const sind = est.videos.filter(v=>v.sin_duracion).map(v=>v.nombre);
+      let av='';
+      if(largos.length) av+=`<div class="aviso bad">Más de ${cfg.limites.max_min_video} min (límite de ElevenLabs): ${esc(largos.join(', '))}</div>`;
+      if(sind.length) av+=`<div class="aviso">Drive no informa la duración de: ${esc(sind.join(', '))}. La estimación puede quedar corta.</div>`;
+      if(est.error_saldo) av+=`<div class="aviso bad">No pude leer el saldo: ${esc(est.error_saldo)}</div>`;
+      if(alc===false) av+=`<div class="aviso bad">El saldo no alcanza. Sacá videos o cambiá de cuenta.</div>`;
+      $('#estaviso').innerHTML=av; $('#estn').textContent='';
+    }catch(e){ $('#estn').textContent=''; $('#estaviso').innerHTML=`<div class="aviso bad">No pude estimar: ${esc(e.message)}</div>`; }
+    actualizarBoton();
+  }, 350);
+}
+async function doblar(){
+  const ids=[...sel.keys()]; if(!ids.length||!est) return;
+  const destino=$('#destino').value, clon=+$('#clon').value;
+  const aviso = (esIngles() && clon>=7) ? `\n\nOJO: destino inglés con clonado ${clon}. De 7 a 10 la pronunciación sale mala, con el acento del actor original.` : '';
+  if(!confirm(`Doblar ${ids.length===1?'1 video':ids.length+' videos'} a ${$('#destino').selectedOptions[0].textContent} con clonación ${clon}.\nCosto estimado: ${fmtN(est.creditos)} créditos. Se cobra al terminar y no se puede deshacer.${aviso}\n\n¿Confirmás?`)) return;
+  $('#go').disabled=true; $('#go').innerHTML='<span class="spin" style="border-top-color:#fff;border-color:rgba(255,255,255,.35)"></span>';
+  try{
+    const r = await api('api/doblar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      videos:ids, motor:document.querySelector('input[name=motor]:checked')?.value, idioma_origen:$('#origen').value,
+      idioma_destino:destino, clonacion:clon, keyterms:$('#keyterms').value, cuenta:$('#cuenta')?.value })});
+    toast(`${ids.length===1?'Video enviado':ids.length+' videos enviados'} · ~${fmtN(r.creditos_estimados)} créditos`);
+    sel.clear(); document.querySelectorAll('.card.v.on').forEach(c=>c.classList.remove('on'));
+    renderSel(); estimar(); pollTrabajos();
+  }catch(e){ toast('No se pudo enviar: '+e.message); est=null; estimar(); }
+}
+async function pollTrabajos(){
+  clearTimeout(pollTimer);
+  try{
+    if(!$('#jobs')) return;
+    const d = await api('api/trabajos'); const ts=d.trabajos;
+    $('#jobn').textContent = ts.length? ts.filter(t=>t.estado==='procesando'||t.estado==='en cola').length+' activos' : '';
+    $('#jobs').innerHTML = ts.length ? ts.map(t=>{
+      const cls={'en cola':'cola','procesando':'proc','listo':'listo','revisar':'revisar','error':'error','interrumpido':'interrumpido','cancelado':'cancelado'}[t.estado]||'cola';
+      const activo = t.estado==='procesando'||t.estado==='en cola';
+      const link = t.carpeta_salida_id ? `<a href="https://drive.google.com/drive/folders/${t.carpeta_salida_id}" target="_blank">Abrir carpeta doblaje ↗</a>` : (activo ? `<button class="cancel" onclick="cancelar('${t.id}')">✕ Cancelar</button>` : '');
+      const inf=t.informe||{}; const ver=inf.verificacion; let chips='';
+      if(!activo && t.estado!=='cancelado'){
+        chips += `<span class="m">${esc(t.destino)} · clon ${t.clonacion}</span>`;
+        if(inf.cobro!=null) chips += `<span class="m">${fmtN(inf.cobro)} cr</span>`;
+        if(ver===null||ver===undefined){ if(inf.segmentos!=null) chips+=`<span class="w">sin verificar</span>`; }
+        else if(ver.restantes&&ver.restantes.length) chips += `<span class="w" title="${esc(ver.restantes.map(r=>r.inicio+'s: '+r.texto).join(' · '))}">⚠ ${ver.restantes.length} segmento${ver.restantes.length===1?'':'s'} con el original: ${esc(ver.restantes.map(r=>r.inicio+'s').join(', '))}</span>`;
+        else chips += `<span>✓ ${ver.segmentos} segmentos, ninguno con el original</span>`;
+      }
+      return `<div class="job ${cls}"><div class="h"><span class="nm" title="${esc(t.nombre)}">${esc(t.nombre)}</span><span class="st ${cls}">${esc(t.estado)}</span></div>
+        <div class="bar"><i style="width:${Math.round((t.progreso||0)*100)}%"></i></div>
+        <div class="et"><span>${esc(t.etapa||'')}</span>${link}</div>
+        ${chips?`<div class="g">${chips}</div>`:''}
+        ${t.error?`<div class="lg">${esc(t.error)}</div>`:(activo&&t.log&&t.log.length?`<div class="lg">${esc(t.log.slice(-2).join('\n'))}</div>`:'')}</div>`;
+    }).join('') : '<div class="empty" style="padding:18px">Todavía no hay trabajos.</div>';
+    const activos = ts.some(t=>t.estado==='procesando'||t.estado==='en cola');
+    pollTimer = setTimeout(pollTrabajos, activos?3000:15000);
+  }catch(e){ pollTimer=setTimeout(pollTrabajos,8000); }
+}
+async function cancelar(id){
+  if(!confirm('¿Cancelar este trabajo? Si ya se subió a ElevenLabs, el cobro no se puede deshacer.')) return;
+  try{ await api('api/trabajos/'+id+'/cancelar',{method:'POST'}); toast('Cancelado'); pollTrabajos(); }
+  catch(e){ toast('No se pudo cancelar: '+e.message); }
+}
+async function salir(){ await fetch('auth/logout',{method:'POST'}); yo={conectado:false}; clearTimeout(pollTimer); render(); }
+init();
+</script>
+</body>
+</html>
