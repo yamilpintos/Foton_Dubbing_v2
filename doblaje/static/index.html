@@ -63,6 +63,11 @@ details summary{cursor:pointer;font-weight:600;color:var(--sel)}
 .buscar input:focus{outline:3px solid var(--sel-soft);border-color:var(--sel)}
 .buscar button{background:#fff;border:1px solid var(--line2);color:var(--ink2);font-weight:600;font-size:.82rem;padding:9px 12px}
 .card .madre{display:block;font-size:.74rem;color:var(--mute);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.destbox{display:flex;align-items:center;gap:8px;background:var(--sel-soft);border-radius:8px;padding:8px 10px;font-size:.86rem;font-weight:500;color:var(--ink)}
+.destbox span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.destbox button{background:transparent;color:var(--ink2);padding:0 4px;font-size:1rem}
+.destbox.def{background:var(--surface-2);color:var(--ink2)}
+.migas .atajos button.dest{color:#fff;background:var(--sel);border:0}
 .card.f .madre{margin-top:1px}
 /* migas + grillas */
 .migas{display:flex;flex-wrap:wrap;align-items:center;gap:4px;padding:12px 20px;border-bottom:1px solid var(--line);font-size:.92rem}
@@ -174,6 +179,7 @@ const fmtDur = s => { if(!s) return ''; s=Math.round(s); const h=Math.floor(s/36
 const fmtGB = b => b>=1e9 ? (b/1e9).toFixed(2)+' GB' : (b/1e6).toFixed(0)+' MB';
 const fmtN = n => n==null ? '—' : Math.round(n).toLocaleString('es-AR');
 let cfg={}, yo={}, carpeta=null, sel=new Map(), cargando=false, pollTimer=null, estTimer=null, est=null;
+let carpetaActual=null, destinoCarpeta=null;   // la carpeta que se está viendo, y la elegida como destino
 const ICO_FOLDER = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 6.5A2.5 2.5 0 0 1 5.5 4h4l2 2h7A2.5 2.5 0 0 1 21 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z"/></svg>';
 const ICO_VIDEO = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 5h11a2 2 0 0 1 2 2v2.4l4-2.4v10l-4-2.4V17a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></svg>';
 const ICO_TICK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>';
@@ -249,19 +255,28 @@ function render(){
         </div>
         <label>Fuerza de clonado <span class="rango"><input type="range" id="clon" min="0" max="10" step="1" value="${cfg.clonacion_default??1}" oninput="clonHint()"><b id="clonv">${cfg.clonacion_default??1}</b></span><span class="hint" id="clonh" style="margin-top:0"></span></label>
         <label>Nombres propios (ayudan a transcribir y traducir)<input id="keyterms" placeholder="Sara, Diego, Karen" value=""></label>
+        <label>Destino de los videos doblados<div id="dest"></div></label>
         ${cuentas}
       </div></div>
       <div class="panel"><h2>Costo <span class="n" id="estn"></span></h2><div class="body">
         <div class="est" id="est"><div><div class="k">Duración</div><div class="v">—</div></div><div class="ac"><div class="k">Créditos</div><div class="v">—</div></div><div><div class="k">Saldo</div><div class="v">—</div></div><div><div class="k">Alcanza</div><div class="v">—</div></div></div>
         <div id="estaviso"></div>
         <button class="btn p w" id="go" disabled onclick="doblar()" style="margin-top:14px">Doblar</button>
-        <p class="hint">Se cobra por segundo de fuente, una sola vez, al terminar el doblaje. El resultado va a una carpeta <b>doblaje</b> dentro de la carpeta de cada video, con un informe.</p>
+        <p class="hint">Se cobra por segundo de fuente, una sola vez, al terminar el doblaje. El resultado va a la carpeta de destino elegida, o a una carpeta <b>doblaje</b> dentro de la carpeta de cada video, con un informe.</p>
       </div></div>
       <div class="panel"><h2>Trabajos <span class="n" id="jobn"></span></h2>
         <div class="jobs" id="jobs"><div class="empty" style="padding:18px">Todavía no hay trabajos.</div></div></div>
     </aside>`;
-  clonHint(); renderSel();
+  clonHint(); renderSel(); renderDestino();
 }
+// ---- destino: la carpeta elegida en Drive, o `doblaje/` al lado de cada original ----
+function renderDestino(){
+  const d=$('#dest'); if(!d) return;
+  d.innerHTML = destinoCarpeta
+    ? `<div class="destbox"><span title="${esc(destinoCarpeta.nombre)}">📁 ${esc(destinoCarpeta.nombre)}</span><button onclick="elegirDestino(null)" title="Volver al destino por defecto">✕</button></div>`
+    : `<div class="destbox def"><span>Al lado de cada original, en una carpeta <b>doblaje</b></span></div><span class="hint" style="margin-top:6px;display:block">Para cambiarlo, entrá a una carpeta a la izquierda y tocá «Usar esta carpeta como destino».</span>`;
+}
+function elegirDestino(c){ destinoCarpeta=c; renderDestino(); toast(c ? 'Destino: '+c.nombre : 'Destino: carpeta doblaje junto a cada original'); }
 
 function esIngles(){ return ($('#destino')?.value||'').toLowerCase().startsWith('en'); }
 function clonHint(){
@@ -300,7 +315,10 @@ async function navegar(id){
     carpeta = await api('api/carpeta?id='+encodeURIComponent(id));
     carpeta.videos.forEach(v=>conocidos.set(v.id, v));
     const migas = carpeta.migas.map((m,i)=> i<carpeta.migas.length-1 ? `<button onclick="navegar('${m.id}')">${esc(m.nombre)}</button><span class="sep">›</span>` : `<span class="cur">${esc(m.nombre)}</span>`).join('');
-    $('#migas').innerHTML = migas + `<span class="atajos"><button onclick="navegar('root')">Mi unidad</button><button onclick="navegar('compartidos')">Compartido conmigo</button></span>`;
+    carpetaActual = carpeta.migas[carpeta.migas.length-1] || null;
+    // "Compartido conmigo" no es una carpeta real de Drive: ahí no se puede escribir
+    const usar = carpetaActual && carpetaActual.id!=='compartidos' ? `<button class="dest" onclick="elegirDestino(carpetaActual)">Usar esta carpeta como destino</button>` : '';
+    $('#migas').innerHTML = migas + `<span class="atajos">${usar}<button onclick="navegar('root')">Mi unidad</button><button onclick="navegar('compartidos')">Compartido conmigo</button></span>`;
     let h='';
     if(carpeta.carpetas.length){ h+=`<div class="sec">Carpetas</div><div class="grid">`+carpeta.carpetas.map(tarjetaCarpeta).join('')+`</div>`; }
     if(carpeta.videos.length){
@@ -383,12 +401,14 @@ async function doblar(){
   const ids=[...sel.keys()]; if(!ids.length||!est) return;
   const destino=$('#destino').value, clon=+$('#clon').value;
   const aviso = (esIngles() && clon>=7) ? `\n\nOJO: destino inglés con clonado ${clon}. De 7 a 10 la pronunciación sale mala, con el acento del actor original.` : '';
-  if(!confirm(`Doblar ${ids.length===1?'1 video':ids.length+' videos'} a ${$('#destino').selectedOptions[0].textContent} con clonación ${clon}.\nCosto estimado: ${fmtN(est.creditos)} créditos. Se cobra al terminar y no se puede deshacer.${aviso}\n\n¿Confirmás?`)) return;
+  const aDonde = destinoCarpeta ? `la carpeta «${destinoCarpeta.nombre}»` : 'una carpeta doblaje junto a cada original';
+  if(!confirm(`Doblar ${ids.length===1?'1 video':ids.length+' videos'} a ${$('#destino').selectedOptions[0].textContent} con clonación ${clon}.\nCosto estimado: ${fmtN(est.creditos)} créditos. Se cobra al terminar y no se puede deshacer.\nLos doblados van a ${aDonde}.${aviso}\n\n¿Confirmás?`)) return;
   $('#go').disabled=true; $('#go').innerHTML='<span class="spin" style="border-top-color:#fff;border-color:rgba(255,255,255,.35)"></span>';
   try{
     const r = await api('api/doblar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
       videos:ids, motor:document.querySelector('input[name=motor]:checked')?.value, idioma_origen:$('#origen').value,
-      idioma_destino:destino, clonacion:clon, keyterms:$('#keyterms').value, cuenta:$('#cuenta')?.value })});
+      idioma_destino:destino, clonacion:clon, keyterms:$('#keyterms').value, cuenta:$('#cuenta')?.value,
+      destino_carpeta: destinoCarpeta ? destinoCarpeta.id : null })});
     toast(`${ids.length===1?'Video enviado':ids.length+' videos enviados'} · ~${fmtN(r.creditos_estimados)} créditos`);
     sel.clear(); document.querySelectorAll('.card.v.on').forEach(c=>c.classList.remove('on'));
     renderSel(); estimar(); pollTrabajos();
@@ -407,6 +427,7 @@ async function pollTrabajos(){
       const inf=t.informe||{}; const ver=inf.verificacion; let chips='';
       if(!activo && t.estado!=='cancelado'){
         chips += `<span class="m">${esc(t.destino)} · clon ${t.clonacion}</span>`;
+        if(t.destino_nombre) chips += `<span class="m" title="carpeta de destino elegida">→ ${esc(t.destino_nombre)}</span>`;
         if(inf.cobro!=null) chips += `<span class="m">${fmtN(inf.cobro)} cr</span>`;
         if(ver===null||ver===undefined){ if(inf.segmentos!=null) chips+=`<span class="w">sin verificar</span>`; }
         else if(ver.restantes&&ver.restantes.length) chips += `<span class="w" title="${esc(ver.restantes.map(r=>r.inicio+'s: '+r.texto).join(' · '))}">⚠ ${ver.restantes.length} segmento${ver.restantes.length===1?'':'s'} con el original: ${esc(ver.restantes.map(r=>r.inicio+'s').join(', '))}</span>`;

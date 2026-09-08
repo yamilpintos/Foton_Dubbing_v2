@@ -384,6 +384,9 @@ async def doblar(req: Request):
         raise HTTPException(400, "la fuerza de clonado va de 0 a 10")
     keyterms = [k.strip() for k in str(body.get("keyterms", "")).replace(";", ",").split(",") if k.strip()][:50]
     cuenta = _cuenta(body.get("cuenta"))
+    # destino: una carpeta elegida en Drive, o (por defecto) `doblaje/` al lado de cada original
+    destino_carpeta = (str(body.get("destino_carpeta") or "")).strip() or None
+    destino_nombre = None
 
     # ---- guardas 3 y 4 ----
     en_curso = {t["video_id"] for t in _activos()}
@@ -399,6 +402,11 @@ async def doblar(req: Request):
     metas, total = [], 0.0
     try:
         d = _drive(s)
+        if destino_carpeta:
+            m = drive.meta(d, destino_carpeta)
+            if m.get("mimeType") != drive.CARPETA:
+                raise HTTPException(400, "el destino elegido no es una carpeta de Drive")
+            destino_nombre = m.get("name", "")
         for vid in ids:
             f = drive.meta(d, vid)
             dur = int((f.get("videoMediaMetadata") or {}).get("durationMillis", 0) or 0) / 1000
@@ -425,6 +433,7 @@ async def doblar(req: Request):
                  padre=(f.get("parents") or ["root"])[0], tamano=int(f.get("size", 0) or 0), duracion_s=dur,
                  motor=motor["id"], origen=origen, destino=destino, clonacion=clonacion, cuenta=cuenta.etiqueta,
                  keyterms=keyterms, estimado=estimar_creditos(dur),
+                 destino_carpeta=destino_carpeta, destino_nombre=destino_nombre,
                  estado="en cola", etapa="", progreso=0.0, log=[], creado=time.strftime("%Y-%m-%d %H:%M:%S"),
                  usuario=s.get("email", ""), carpeta_salida_id=None, salidas=[], informe=None, error=None)
         _trabajos[t["id"]] = t
@@ -547,8 +556,10 @@ def _procesar(t: dict, s: dict):
 
         etapa("drive", 0.90)
         d = _drive(s)
-        cid = drive.carpeta_salida(d, t["padre"], C.PREFIJO)
+        # a la carpeta que eligió el usuario, o a `doblaje/` dentro de la carpeta del original
+        cid = t.get("destino_carpeta") or drive.carpeta_salida(d, t["padre"], C.PREFIJO)
         t["carpeta_salida_id"] = cid
+        log("subiendo a " + (f"«{t['destino_nombre']}»" if t.get("destino_carpeta") else f"{C.PREFIJO}/ junto al original"))
         for k, p in enumerate((salida, informe_json)):
             log(f"subiendo {p.name}")
             t["salidas"].append(dict(nombre=p.name, id=drive.subir(d, p, cid)))

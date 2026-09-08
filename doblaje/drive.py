@@ -106,7 +106,7 @@ def buscar(d, texto: str, maximo: int = 40) -> dict:
     """Carpetas y videos cuyo nombre contiene `texto`, en TODO lo que el usuario ve
     (su unidad y lo compartido). Trae el nombre de la carpeta madre de cada resultado
     para distinguir homónimos; una llamada extra por carpeta madre distinta."""
-    t = texto.replace("\\", "\\\\").replace("'", "\'")
+    t = texto.replace("\\", "\\\\").replace("'", "\\'")  # sintaxis de consultas de Drive: apostrofo y barra escapados
     q = (f"name contains '{t}' and trashed = false and "
          f"(mimeType = '{CARPETA}' or mimeType contains 'video/')")
     campos = "files(id, name, mimeType, size, thumbnailLink, parents, videoMediaMetadata(durationMillis))"
