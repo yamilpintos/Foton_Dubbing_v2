@@ -1,0 +1,38 @@
+# Render Blueprint: la app Doblaje como SERVICIO WEB (Python).
+#
+# ★ El servicio anterior de este repo ("dubai-demo") era un SITIO ESTÁTICO y no puede correr
+#   un servidor Python. Este archivo define un servicio nuevo, "doblaje". Al sincronizar el
+#   Blueprint, Render lo crea; el viejo "dubai-demo" hay que borrarlo desde el panel.
+#
+# Alta: Render → New → Blueprint → este repo. Después, en el panel del servicio, cargar las
+# variables marcadas sync: false (no van en el repo).
+#
+# ffmpeg: Render no lo trae. requirements.txt incluye `imageio-ffmpeg`, que instala el binario
+# por pip, y config.py lo encuentra solo. La duración se saca con `ffmpeg -i` (no hay ffprobe).
+#
+# OAuth de Google: registrar como URI de redirección  https://<nombre>.onrender.com/auth/callback
+services:
+  - type: web
+    name: doblaje
+    runtime: python
+    plan: starter
+    region: oregon
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn doblaje.web:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips="*"
+    healthCheckPath: /api/me
+    pullRequestPreviewsEnabled: false
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12"
+      - key: DOBLAJE_TRABAJO
+        value: /tmp/doblaje
+      # --- secretos: se cargan en el panel, nunca en el repo ---
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: ELEVENLABS_API_KEY
+        sync: false
+      # segunda cuenta, opcional (aparece un selector en la web)
+      - key: ELEVENLABS_API_KEY_ALT
+        sync: false

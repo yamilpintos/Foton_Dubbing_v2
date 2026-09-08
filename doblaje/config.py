@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import glob
 import os
+import shutil
 from pathlib import Path
 
 PAQUETE = Path(__file__).resolve().parent              # .../doblaje/doblaje
-RAIZ = PAQUETE.parent                                  # .../apps/doblaje
+RAIZ = PAQUETE.parent                                  # la carpeta de la app (o del repo)
 FOTON = Path(os.getenv("FOTON", str(RAIZ.parent.parent.parent if RAIZ.parent.name == "apps" else RAIZ.parent)))
 
 
@@ -26,19 +27,41 @@ cargar_env()
 
 
 def _ffmpeg() -> str:
-    """FFMPEG del entorno; si no, el de dubai_v2; si no, el de ~/ffmpeg/*/bin; si no, el del PATH."""
+    """FFMPEG del entorno; si no, el de dubai_v2; si no, ~/ffmpeg/*/bin; si no, el del PATH;
+    si no, el binario que trae el paquete `imageio-ffmpeg` (Render y otros Linux sin ffmpeg)."""
     if os.getenv("FFMPEG"):
         return os.environ["FFMPEG"]
     local = FOTON / "dubai_v2" / "_bin" / "ffmpeg.exe"
     if local.exists():
         return str(local)
     casa = sorted(glob.glob(str(Path.home() / "ffmpeg" / "*" / "bin" / "ffmpeg.exe")))
-    return casa[-1] if casa else "ffmpeg"
+    if casa:
+        return casa[-1]
+    en_path = shutil.which("ffmpeg")
+    if en_path:
+        return en_path
+    try:
+        import imageio_ffmpeg
+        return imageio_ffmpeg.get_ffmpeg_exe()
+    except Exception:
+        return "ffmpeg"
+
+
+def _ffprobe() -> str | None:
+    """El ffprobe que acompaña a ese ffmpeg, o el del PATH. `None` si no hay: media.py
+    saca la duración con `ffmpeg -i` (imageio-ffmpeg trae ffmpeg pero no ffprobe)."""
+    if os.getenv("FFPROBE"):
+        return os.environ["FFPROBE"]
+    p = Path(FFMPEG)
+    if p.parent != Path("") and "ffmpeg" in p.name:
+        cand = p.with_name(p.name.replace("ffmpeg", "ffprobe"))
+        if cand.exists():
+            return str(cand)
+    return shutil.which("ffprobe")
 
 
 FFMPEG = _ffmpeg()
-FFPROBE = (str(Path(FFMPEG).with_name("ffprobe" + Path(FFMPEG).suffix))
-           if Path(FFMPEG).name.lower().startswith("ffmpeg") and Path(FFMPEG).parent != Path("") else "ffprobe")
+FFPROBE = _ffprobe()
 
 TRABAJO = Path(os.getenv("DOBLAJE_TRABAJO", str(RAIZ / "_trabajo")))
 PREFIJO = "doblaje"                                    # la carpeta de salida en Drive

@@ -2,6 +2,7 @@
 """Lo poco de ffmpeg que hace falta: medir, comprimir para subir, y pegar el audio nuevo."""
 from __future__ import annotations
 
+import re
 import subprocess
 from pathlib import Path
 
@@ -9,12 +10,18 @@ from . import config as C
 
 
 def duracion_s(path: Path) -> float:
-    r = subprocess.run([C.FFPROBE, "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(path)],
-                       capture_output=True, text=True)
-    try:
-        return float(r.stdout.strip())
-    except ValueError:
-        return 0.0
+    """Con ffprobe si hay; si no (Render con imageio-ffmpeg), `ffmpeg -i` imprime
+    `Duration: HH:MM:SS.xx` en stderr y de ahí se saca."""
+    if C.FFPROBE:
+        r = subprocess.run([C.FFPROBE, "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0",
+                            str(path)], capture_output=True, text=True, errors="replace")
+        try:
+            return float(r.stdout.strip())
+        except ValueError:
+            pass
+    r = subprocess.run([C.FFMPEG, "-hide_banner", "-i", str(path)], capture_output=True, text=True, errors="replace")
+    m = re.search(r"Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)", r.stderr)
+    return int(m.group(1)) * 3600 + int(m.group(2)) * 60 + float(m.group(3)) if m else 0.0
 
 
 def comprimir_para_subir(src: Path, dst: Path) -> Path:

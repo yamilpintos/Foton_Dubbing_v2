@@ -43,13 +43,28 @@ Este repo es la app sola. Dentro de la plataforma de herramientas vive en `apps/
   aplicación web, URI de redirección `http://localhost:8790/auth/callback`.
 - **`ELEVENLABS_API_KEY`**. Si no está en `.env`, se toma de `dubai_v2/.env`. Una segunda
   cuenta opcional en `ELEVENLABS_API_KEY_ALT` (aparece un selector).
-- **ffmpeg** (`FFMPEG` en `.env`, o `dubai_v2/_bin/ffmpeg.exe`, o `~/ffmpeg/*/bin`, o el PATH).
+- **ffmpeg** (`FFMPEG` en `.env`, o `dubai_v2/_bin/ffmpeg.exe`, o `~/ffmpeg/*/bin`, o el PATH, o el que instala `imageio-ffmpeg`).
 - **numpy**, sólo para la verificación acústica; sin numpy la app dobla igual y avisa
   que no verificó.
 
 El procesamiento corre en la máquina que sirve la web (baja de Drive, sube a ElevenLabs,
 pega el audio, verifica, sube a Drive). No hay GPU de por medio: el trabajo pesado lo
 hace ElevenLabs.
+
+## Desplegar en Render
+
+`render.yaml` define un **servicio web Python** llamado `doblaje`. El servicio anterior de este
+repo (`dubai-demo`) era un sitio estático y no puede correr esto: hay que borrarlo desde el
+panel y dejar que el Blueprint cree el nuevo.
+
+1. Render → New → Blueprint → este repo (o, si el Blueprint ya está conectado, sincronizar).
+2. En el servicio `doblaje` → Environment: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`,
+   `ELEVENLABS_API_KEY` (y `ELEVENLABS_API_KEY_ALT` si hay segunda cuenta).
+3. En Google Cloud, agregar la URI de redirección `https://<nombre>.onrender.com/auth/callback`.
+
+ffmpeg no viene en Render: `imageio-ffmpeg` (en `requirements.txt`) instala el binario por pip y
+la app lo encuentra sola. Ojo con la memoria del plan Starter (512 MB): la verificación acústica
+carga el audio entero; con videos de más de ~15 min conviene subir de plan o desactivar numpy.
 
 ## Guardas de gasto
 

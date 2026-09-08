@@ -6,3 +6,5 @@ google-auth
 google-auth-oauthlib
 # verificación acústica (opcional: sin esto dobla igual, pero no verifica)
 numpy
+# ffmpeg por pip, para servidores que no lo traen (Render). Si hay ffmpeg en el sistema, se usa ése.
+imageio-ffmpeg
