@@ -53,8 +53,8 @@ from .dubbing import Cuenta, DubbingError, estimar_creditos
 AQUI = Path(__file__).resolve().parent
 ESTATICO = AQUI / "static"
 PUERTO = int(os.getenv("DOBLAJE_PUERTO", os.getenv("PORT", "8790")))
-CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
-CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
+CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "").strip()          # un espacio pegado en el panel = invalid_client
+CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "").strip()
 SCOPES = ["https://www.googleapis.com/auth/drive",
           "https://www.googleapis.com/auth/userinfo.email", "openid"]
 if not os.getenv("RENDER"):
@@ -138,12 +138,43 @@ def api_config(req: Request):
                 limites=dict(simultaneos=C.SIMULTANEOS, max_por_dia=C.MAX_POR_DIA, max_min_video=C.MAX_MIN_VIDEO))
 
 
+def _pagina_error(req: Request, titulo: str, detalle: str, pistas: list[str], status: int = 500):
+    """Una página legible en vez del 'Internal Server Error' pelado: qué falló y qué revisar."""
+    from html import escape
+    raiz = req.scope.get("root_path", "") or ""
+    items = "".join(f"<li>{escape(p)}</li>" for p in pistas)
+    html = f"""<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Doblaje · error al conectar</title>
+<style>body{{font-family:system-ui,sans-serif;background:#F3F4F6;color:#151A21;margin:0}}main{{max-width:680px;margin:48px auto;padding:0 24px}}
+.box{{background:#fff;border:1px solid #E2E6EB;border-radius:12px;padding:22px}}h1{{font-size:1.25rem;margin:0 0 10px}}
+pre{{background:#F9E3E1;color:#B3261E;padding:12px;border-radius:8px;white-space:pre-wrap;word-break:break-word;font-size:.85rem}}
+li{{margin:6px 0;color:#4A5563}}a{{color:#2F6FED;font-weight:600}}</style></head><body><main><div class="box">
+<h1>{escape(titulo)}</h1><pre>{escape(detalle)}</pre><p>Qué revisar:</p><ul>{items}</ul>
+<p><a href="{raiz}/">← Volver e intentar de nuevo</a></p></div></main></body></html>"""
+    return HTMLResponse(html, status_code=status)
+
+
+PISTAS_GOOGLE = [
+    "GOOGLE_CLIENT_SECRET en el servidor: tiene que ser el secreto del MISMO cliente que GOOGLE_CLIENT_ID, sin espacios ni saltos de línea pegados.",
+    "En Google Cloud → Credenciales → ese cliente OAuth (tipo 'Aplicación web') → 'URI de redireccionamiento autorizados' tiene que estar EXACTAMENTE la URL de callback que muestra api/config.",
+    "Pantalla de consentimiento en modo 'prueba': tu mail tiene que figurar como usuario de prueba, si no Google bloquea el ingreso.",
+    "Si volviste a esta página después de mucho tiempo o abriste el login en dos pestañas, la sesión venció: volvé y conectá de nuevo.",
+]
+
+
 @app.get("/auth/login")
 def login(req: Request):
-    f = _flow(req)
-    url, state = f.authorization_url(access_type="offline", include_granted_scopes="true", prompt="consent")
+    try:
+        f = _flow(req)
+        url, state = f.authorization_url(access_type="offline", include_granted_scopes="true", prompt="consent")
+    except HTTPException:
+        raise
+    except Exception as e:
+        print("[auth/login] " + traceback.format_exc(), flush=True)
+        return _pagina_error(req, "No pude armar el pedido de conexión a Google", f"{type(e).__name__}: {e}", PISTAS_GOOGLE)
     tok = secrets.token_urlsafe(24)
-    _sesiones[tok] = dict(state=state)
+    # ★ PKCE: google-auth-oauthlib ≥ 1.1 genera un code_verifier al armar el login y Google exige
+    #   el MISMO al canjear el código. El callback crea otro Flow, así que hay que guardarlo acá.
+    _sesiones[tok] = dict(state=state, code_verifier=getattr(f, "code_verifier", None))
     r = RedirectResponse(url)
     r.set_cookie(COOKIE, tok, httponly=True, samesite="lax", secure=bool(os.getenv("RENDER")))
     return r
@@ -152,19 +183,33 @@ def login(req: Request):
 @app.get("/auth/callback")
 def callback(req: Request):
     raiz = req.scope.get("root_path", "") or "/"
+    destino = raiz if raiz.endswith("/") else raiz + "/"
     s = _sesiones.get(req.cookies.get(COOKIE) or "")
     if not s:
-        return RedirectResponse(raiz)
-    f = _flow(req, state=s.get("state"))
-    url = str(req.url)
-    f.fetch_token(authorization_response=url.replace("http://", "https://", 1) if os.getenv("RENDER") else url)
+        return RedirectResponse(destino)
+    # Google vuelve con ?error=... cuando el usuario cancela o la cuenta no está permitida
+    err = req.query_params.get("error")
+    if err:
+        return _pagina_error(req, "Google no autorizó la conexión", f"Google devolvió: {err}", PISTAS_GOOGLE, status=400)
+    try:
+        f = _flow(req, state=s.get("state"))
+        if s.get("code_verifier"):
+            f.code_verifier = s["code_verifier"]          # sin esto: "(invalid_grant) Missing code verifier"
+        url = str(req.url)
+        f.fetch_token(authorization_response=url.replace("http://", "https://", 1) if os.getenv("RENDER") else url)
+    except HTTPException:
+        raise
+    except Exception as e:
+        # ★ acá es donde antes moría en silencio con un 500: Google rechazó el intercambio del código
+        print("[auth/callback] " + traceback.format_exc(), flush=True)
+        return _pagina_error(req, "Google rechazó el intercambio del código", f"{type(e).__name__}: {e}", PISTAS_GOOGLE)
     s["creds"] = _creds_a_dict(f.credentials)
     try:
         info = build("oauth2", "v2", credentials=f.credentials, cache_discovery=False).userinfo().get().execute()
         s["email"], s["nombre"] = info.get("email", ""), info.get("name", "")
     except Exception:
         s["email"] = s["nombre"] = ""
-    return RedirectResponse(raiz if raiz.endswith("/") else raiz + "/")
+    return RedirectResponse(destino)
 
 
 @app.post("/auth/logout")

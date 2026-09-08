@@ -27,6 +27,7 @@ class DubbingError(RuntimeError):
 
 class Cuenta:
     def __init__(self, api_key: str, etiqueta: str = ""):
+        api_key = (api_key or "").strip()          # un espacio pegado en el panel = 401 en cada llamada
         if not api_key:
             raise DubbingError("falta la clave de ElevenLabs")
         self.key = api_key
