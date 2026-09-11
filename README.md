@@ -25,7 +25,14 @@ Dos motores:
   el idioma de origen, el trabajo termina en **REVISAR** con los timecodes.
 - **Los archivos grandes se comprimen antes de subir** (1,8 GB → 84 MB, mismo cobro), y el
   audio final se pega sobre el original en calidad plena.
-- **El nivel se iguala al original.** Dubbing v2 entrega su mezcla a unos −7,5 LUFS sea cual sea el
+- **El nivel se corrige por pistas cuando hay separador** (`DOBLAJE_MODO_NIVEL=auto`, el valor por
+  defecto). Se separan original y doblado con BS-RoFormer, la voz doblada se lleva al nivel de la voz
+  original segmento por segmento y se mezcla con el **fondo original sin tocar**: medido, voz y fondo
+  quedan a ±0,1 dB del original. El separador se toma de `DOBLAJE_SEPARADOR` (por defecto el módulo
+  sellado de `dubai_v2`) y corre en el Python de `DOBLAJE_PY_SEP` si hace falta uno aparte. En CPU tarda
+  unos 7 minutos por minuto de audio y por pasada; en GPU, segundos. Sin separador (Render), cae al modo
+  siguiente.
+- **Sin separador, el nivel se iguala por mezcla.** Dubbing v2 entrega su mezcla a unos −7,5 LUFS sea cual sea el
   original, con la voz entre +2 y +10 dB más fuerte y picos por encima de 0 dBFS (recorta). La app mide
   la sonoridad integrada de los dos (EBU R128), aplica la diferencia y limita los picos a −1 dBTP; medido
   en 4 videos, la voz queda a ±0,5 dB de la original. El informe trae la ganancia aplicada y cuántos dB

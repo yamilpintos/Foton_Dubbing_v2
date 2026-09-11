@@ -135,6 +135,7 @@ def api_config(req: Request):
                 motores=C.MOTORES, idiomas_destino=C.IDIOMAS_DESTINO, idiomas_origen=C.IDIOMAS_ORIGEN,
                 clonacion_default=C.CLONACION_DEFAULT, cr_por_min=C.CR_POR_MIN, umbral=C.UMBRAL,
                 cuentas=_cuentas(), verificacion=verificar.disponible(), ffmpeg=media.ffmpeg_disponible(),
+                nivel=dict(activo=C.NIVELAR, modo=C.MODO_NIVEL, separador=media.separador_disponible()),
                 limites=dict(simultaneos=C.SIMULTANEOS, max_por_dia=C.MAX_POR_DIA, max_min_video=C.MAX_MIN_VIDEO))
 
 
@@ -331,6 +332,7 @@ _lock = threading.Lock()
 ACTIVOS = ("en cola", "procesando")
 ETAPAS = dict(bajando="bajando de Drive", comprimiendo="comprimiendo para subir", subiendo="subiendo a ElevenLabs",
               transcribiendo="transcribiendo", doblando="traduciendo y doblando", audio="bajando el audio doblado",
+              separando="separando voz y fondo para nivelar por pistas",
               montando="pegando el audio al video", verificando="verificando que no quede el original",
               drive="subiendo a Drive", fin="terminado")
 
@@ -524,13 +526,36 @@ def _procesar(t: dict, s: dict):
 
         etapa("audio", 0.75)
         wav_crudo = cuenta.bajar_audio(url, wdir / "doblado_crudo.wav")
-        # ★ nivel: v2 entrega su mezcla a ~-7,5 LUFS con la voz +2…+10 dB sobre la original y picos > 0 dBFS.
-        #   Se iguala la sonoridad integrada a la del original y se limitan los picos; la voz queda a ±0,5 dB.
+        segs = cuenta.transcripto(pid)
+        # ★ nivel. v2 entrega la voz +2…+10 dB sobre la original, el fondo casi intacto y picos > 0 dBFS.
+        #   modo "pistas" (aprobado de oído 11-sep): se separan original y doblado, la voz doblada se lleva al
+        #   nivel de la voz original (por segmento) y se mezcla con el FONDO ORIGINAL sin tocar → voz y fondo
+        #   a ±0,1 dB. Necesita separador (lento en CPU). Sin separador, modo "mezcla": se iguala la sonoridad
+        #   de la mezcla entera → la voz queda bien pero el fondo baja ~4 dB, y el informe lo muestra.
         nivel = None
         wav = wav_crudo
-        if C.NIVELAR:
+        usar_pistas = C.NIVELAR and C.MODO_NIVEL in ("pistas", "auto") and media.separador_disponible()
+        if usar_pistas:
+            etapa("separando", 0.76)
+            log("separando voz y fondo del original y del doblado (2 pasadas, lento en CPU)")
+            so = media.separar(media.extraer_audio(local, wdir / "orig_44k.wav"), wdir / "sep_orig", log)
+            sd = media.separar(media.extraer_audio(wav_crudo, wdir / "dub_44k.wav"), wdir / "sep_dub", log) if so else None
+            if so and sd:
+                off = verificar.nivel_voz(so[0], sd[0], segs)
+                gain_voz = -(off or 0.0)
+                media.mezclar_pistas(sd[0], so[1], gain_voz, wdir / "doblado.wav")
+                wav = wdir / "doblado.wav"
+                e_o, e_n = media.sonoridad(local), media.sonoridad(wav)
+                nivel = dict(modo="pistas", gain_db=round(gain_voz, 1), I_original=e_o.get("I"), I_antes=media.sonoridad(wav_crudo).get("I"),
+                             I_despues=e_n.get("I"), tp_antes=None, tp_despues=e_n.get("TP"))
+                log(f"pistas: voz doblada {off:+.1f} dB respecto de la voz original → corregida {gain_voz:+.1f} dB; fondo = el original")
+            else:
+                log("no pude separar: caigo al modo mezcla")
+                usar_pistas = False
+        if C.NIVELAR and not usar_pistas:
             nivel = media.igualar_sonoridad(local, wav_crudo, wdir / "doblado.wav")
             if nivel:
+                nivel["modo"] = "mezcla"
                 wav = wdir / "doblado.wav"
                 log(f"nivel igualado al original: {nivel['gain_db']:+.1f} dB (de {nivel['I_antes']:.1f} a {nivel['I_despues']:.1f} LUFS, "
                     f"pico {nivel['tp_antes']:+.1f} → {nivel['tp_despues']:+.1f} dBFS)")
@@ -542,7 +567,6 @@ def _procesar(t: dict, s: dict):
         media.pegar_audio(local, wav, salida)
 
         etapa("verificando", 0.85)
-        segs = cuenta.transcripto(pid)
         ver = verificar.castellano_restante(local, wav, segs)
         if nivel is not None:
             nivel["voz_vs_original_antes_db"] = verificar.nivel_voz(local, wav_crudo, segs)

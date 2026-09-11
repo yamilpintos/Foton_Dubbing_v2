@@ -82,6 +82,12 @@ SR_VERIF = 16000
 NIVELAR = os.getenv("DOBLAJE_NIVELAR", "1") != "0"
 TP_MAX_DB = float(os.getenv("DOBLAJE_TP_MAX", "-1.0"))              # techo de pico verdadero
 
+# ---- pistas: voz doblada al nivel de la voz original + FONDO ORIGINAL intacto (aprobado de oído 11-sep) ----
+#   v2 sube la voz y deja el fondo; igualar la mezcla entera baja el fondo ~4 dB. Con separador se corrige por pista.
+MODO_NIVEL = os.getenv("DOBLAJE_MODO_NIVEL", "auto")       # pistas | mezcla | auto (pistas si hay separador)
+SEPARADOR = os.getenv("DOBLAJE_SEPARADOR", str(FOTON / "dubai_v2" / "_OFICIAL_2026-08-30_B4" / "codigo" / "sep_replicate.py"))
+PY_SEP = os.getenv("DOBLAJE_PY_SEP", "")                    # python con audio-separator; vacío = el mismo intérprete
+
 # ---- subida ----
 MAX_SUBIDA_MB = float(os.getenv("DOBLAJE_MAX_SUBIDA_MB", "200"))
 
