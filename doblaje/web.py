@@ -254,6 +254,24 @@ def _error_drive(e: Exception) -> HTTPException:
     return HTTPException(500, f"{type(e).__name__}: {e}")
 
 
+def _permisos_del_token(s: dict) -> dict:
+    """Qué permisos trae de verdad el token de la sesión, según Google (tokeninfo)."""
+    import requests as _rq
+    try:
+        tok = _creds(s).token
+        r = _rq.get("https://oauth2.googleapis.com/tokeninfo", params={"access_token": tok}, timeout=20)
+        info = r.json() if r.ok else {"error": r.text[:200]}
+        scopes = (info.get("scope") or "").split()
+        return dict(scopes=scopes, drive=any("auth/drive" in x for x in scopes), email=info.get("email"))
+    except Exception as e:
+        return dict(scopes=[], drive=None, error=str(e)[:200])
+
+
+@app.get("/api/permisos")
+def permisos(req: Request):
+    return _permisos_del_token(_sesion(req))
+
+
 @app.get("/api/carpeta")
 def carpeta(req: Request, id: str = "root"):
     s = _sesion(req)
@@ -263,7 +281,15 @@ def carpeta(req: Request, id: str = "root"):
         raise
     except Exception as e:
         print("[api/carpeta] " + traceback.format_exc(), flush=True)
-        raise _error_drive(e)
+        h = _error_drive(e)
+        if h.status_code == 403 and "permiso" in h.detail:
+            p = _permisos_del_token(s)
+            cortos = [x.replace("https://www.googleapis.com/auth/", "") for x in p.get("scopes", [])]
+            h.detail += (f" Permisos que trae el token según Google: {', '.join(cortos) or 'ninguno'}. "
+                         + ("Falta 'drive'. " if p.get("drive") is False else "")
+                         + "Si al reconectar Google no muestra casillas, quitá el acceso de la app en "
+                           "https://myaccount.google.com/permissions y conectá de nuevo.")
+        raise h
 
 
 @app.get("/api/buscar")
