@@ -429,8 +429,9 @@ async function pollTrabajos(){
         chips += `<span class="m">${esc(t.destino)} · clon ${t.clonacion}</span>`;
         if(t.destino_nombre) chips += `<span class="m" title="carpeta de destino elegida">→ ${esc(t.destino_nombre)}</span>`;
         if(inf.cobro!=null) chips += `<span class="m">${fmtN(inf.cobro)} cr</span>`;
-        if(inf.nivel){ const nv=inf.nivel, v=nv.voz_vs_original_db; const g=(nv.gain_db>0?'+':'')+nv.gain_db;
-          chips += `<span class="${v!=null&&Math.abs(v)>3?'w':'m'}" title="Sonoridad igualada al original: ${g} dB (${nv.I_antes} → ${nv.I_despues} LUFS, pico ${nv.tp_antes} → ${nv.tp_despues} dBFS). Voz respecto de la original: ${nv.voz_vs_original_antes_db} dB antes, ${v} dB después.">nivel ${g} dB${v!=null?' · voz '+(v>0?'+':'')+v+' dB':''}</span>`; }
+        if(inf.nivel){ const nv=inf.nivel, v=nv.voz_vs_original_db, fo=nv.fondo_vs_original_db; const g=(nv.gain_db>0?'+':'')+nv.gain_db; const sg=x=>(x>0?'+':'')+x;
+          const mal = (v!=null&&Math.abs(v)>3) || (fo!=null&&Math.abs(fo)>3);
+          chips += `<span class="${mal?'w':'m'}" title="Sonoridad igualada al original: ${g} dB (${nv.I_antes} → ${nv.I_despues} LUFS, pico ${nv.tp_antes} → ${nv.tp_despues} dBFS). Voz respecto de la original: ${nv.voz_vs_original_antes_db} dB antes, ${v} dB después. Fondo respecto del original: ${fo} dB (v2 sube la voz y deja el fondo; al igualar la mezcla entera el fondo baja).">nivel ${g} dB${v!=null?' · voz '+sg(v)+' dB':''}${fo!=null?' · fondo '+sg(fo)+' dB':''}</span>`; }
         if(ver===null||ver===undefined){ if(inf.segmentos!=null) chips+=`<span class="w">sin verificar</span>`; }
         else if(ver.restantes&&ver.restantes.length) chips += `<span class="w" title="${esc(ver.restantes.map(r=>r.inicio+'s: '+r.texto).join(' · '))}">⚠ ${ver.restantes.length} segmento${ver.restantes.length===1?'':'s'} con el original: ${esc(ver.restantes.map(r=>r.inicio+'s').join(', '))}</span>`;
         else chips += `<span>✓ ${ver.segmentos} segmentos, ninguno con el original</span>`;

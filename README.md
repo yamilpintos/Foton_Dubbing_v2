@@ -29,7 +29,10 @@ Dos motores:
   original, con la voz entre +2 y +10 dB más fuerte y picos por encima de 0 dBFS (recorta). La app mide
   la sonoridad integrada de los dos (EBU R128), aplica la diferencia y limita los picos a −1 dBTP; medido
   en 4 videos, la voz queda a ±0,5 dB de la original. El informe trae la ganancia aplicada y cuántos dB
-  quedó la voz respecto de la original (antes y después). Se apaga con `DOBLAJE_NIVELAR=0`.
+  quedó la voz respecto de la original (antes y después), y también el **fondo**: como v2 conserva el
+  fondo pero sube la voz, al igualar la mezcla entera el fondo baja ~4 dB. El informe lo muestra; la
+  corrección completa (voz doblada + fondo original, ±0,1 dB en las dos) necesita separar pistas y hoy se
+  hace fuera de la web. Se apaga con `DOBLAJE_NIVELAR=0`.
 
 ## Correr sola
 

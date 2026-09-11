@@ -547,8 +547,13 @@ def _procesar(t: dict, s: dict):
         if nivel is not None:
             nivel["voz_vs_original_antes_db"] = verificar.nivel_voz(local, wav_crudo, segs)
             nivel["voz_vs_original_db"] = verificar.nivel_voz(local, wav, segs)
+            nivel["fondo_vs_original_db"] = verificar.nivel_fondo(local, wav, segs)
             if nivel["voz_vs_original_db"] is not None:
                 log(f"voz respecto de la original: {nivel['voz_vs_original_antes_db']:+.1f} dB antes → {nivel['voz_vs_original_db']:+.1f} dB después")
+            if nivel["fondo_vs_original_db"] is not None:
+                log(f"fondo respecto del original: {nivel['fondo_vs_original_db']:+.1f} dB" +
+                    ("  (v2 sube la voz y deja el fondo: al igualar la mezcla, el fondo baja; la corrección por pistas lo evita)"
+                     if nivel["fondo_vs_original_db"] < -2 else ""))
         try:
             saldo_despues = cuenta.saldo()["libres"]
         except DubbingError:

@@ -95,3 +95,22 @@ def nivel_voz(original: Path, doblado: Path, segmentos: list[dict]) -> float | N
         if j - i >= sr // 3:
             v.append(db(_banda(ad[i:j])) - db(_banda(ao[i:j])))
     return round(float(np.median(v)), 1) if v else None
+
+
+def nivel_fondo(original: Path, doblado: Path, segmentos: list[dict]) -> float | None:
+    """Cuántos dB está el FONDO (música y ambiente) del doblado respecto del original, medido en huecos
+    sin habla de 0,25 s con 150 ms de margen alrededor de cada segmento. v2 conserva el fondo (≈ −0,5 dB)
+    pero sube la voz; al igualar la sonoridad de la mezcla entera el fondo cae ~4 dB: este número lo delata.
+    None sin numpy o sin huecos."""
+    if np is None:
+        return None
+    ao, ad = _cargar(original), _cargar(doblado)
+    n = min(len(ao), len(ad)); sr = C.SR_VERIF; m = int(0.15 * sr); w = int(0.25 * sr)
+    ocupado = np.zeros(n, dtype=bool)
+    for s in segmentos:
+        i, j = int(float(s["start_s"]) * sr) - m, int(min(float(s["end_s"]) * sr, n)) + m
+        ocupado[max(0, i):min(n, j)] = True
+    def db(x): return 20 * np.log10(np.sqrt(np.mean(x ** 2)) + 1e-9)
+    f = [db(ad[i:i + w]) - db(ao[i:i + w]) for i in range(0, n - w, w)
+         if not ocupado[i:i + w].any() and db(ao[i:i + w]) > -55]
+    return round(float(np.median(f)), 1) if len(f) >= 4 else None
