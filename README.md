@@ -25,6 +25,11 @@ Dos motores:
   el idioma de origen, el trabajo termina en **REVISAR** con los timecodes.
 - **Los archivos grandes se comprimen antes de subir** (1,8 GB → 84 MB, mismo cobro), y el
   audio final se pega sobre el original en calidad plena.
+- **El nivel se iguala al original.** Dubbing v2 entrega su mezcla a unos −7,5 LUFS sea cual sea el
+  original, con la voz entre +2 y +10 dB más fuerte y picos por encima de 0 dBFS (recorta). La app mide
+  la sonoridad integrada de los dos (EBU R128), aplica la diferencia y limita los picos a −1 dBTP; medido
+  en 4 videos, la voz queda a ±0,5 dB de la original. El informe trae la ganancia aplicada y cuántos dB
+  quedó la voz respecto de la original (antes y después). Se apaga con `DOBLAJE_NIVELAR=0`.
 
 ## Correr sola
 

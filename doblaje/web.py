@@ -523,7 +523,19 @@ def _procesar(t: dict, s: dict):
             raise DubbingError("ElevenLabs no devolvió el audio")
 
         etapa("audio", 0.75)
-        wav = cuenta.bajar_audio(url, wdir / "doblado.wav")
+        wav_crudo = cuenta.bajar_audio(url, wdir / "doblado_crudo.wav")
+        # ★ nivel: v2 entrega su mezcla a ~-7,5 LUFS con la voz +2…+10 dB sobre la original y picos > 0 dBFS.
+        #   Se iguala la sonoridad integrada a la del original y se limitan los picos; la voz queda a ±0,5 dB.
+        nivel = None
+        wav = wav_crudo
+        if C.NIVELAR:
+            nivel = media.igualar_sonoridad(local, wav_crudo, wdir / "doblado.wav")
+            if nivel:
+                wav = wdir / "doblado.wav"
+                log(f"nivel igualado al original: {nivel['gain_db']:+.1f} dB (de {nivel['I_antes']:.1f} a {nivel['I_despues']:.1f} LUFS, "
+                    f"pico {nivel['tp_antes']:+.1f} → {nivel['tp_despues']:+.1f} dBFS)")
+            else:
+                log("no pude medir la sonoridad: queda sin nivelar")
         etapa("montando", 0.80)
         sufijo = t["destino"].replace("-", "")
         salida = wdir / f"{Path(t['nombre']).stem}_{sufijo}.mp4"
@@ -532,6 +544,11 @@ def _procesar(t: dict, s: dict):
         etapa("verificando", 0.85)
         segs = cuenta.transcripto(pid)
         ver = verificar.castellano_restante(local, wav, segs)
+        if nivel is not None:
+            nivel["voz_vs_original_antes_db"] = verificar.nivel_voz(local, wav_crudo, segs)
+            nivel["voz_vs_original_db"] = verificar.nivel_voz(local, wav, segs)
+            if nivel["voz_vs_original_db"] is not None:
+                log(f"voz respecto de la original: {nivel['voz_vs_original_antes_db']:+.1f} dB antes → {nivel['voz_vs_original_db']:+.1f} dB después")
         try:
             saldo_despues = cuenta.saldo()["libres"]
         except DubbingError:
@@ -540,7 +557,7 @@ def _procesar(t: dict, s: dict):
                    duracion_s=round(dur, 1), segmentos=len(segs),
                    cobro=(saldo_antes - saldo_despues) if saldo_despues is not None else None,
                    saldo_antes=saldo_antes, saldo_despues=saldo_despues,
-                   verificacion=ver, comprimido=a_subir is not local,
+                   verificacion=ver, nivel=nivel, comprimido=a_subir is not local,
                    traduccion=[dict(inicio=x.get("start_s"), fin=x.get("end_s"), texto=x.get("source_text"),
                                     traduccion=x.get("translation")) for x in cuenta.traduccion(pid, lid)])
         t["informe"] = inf

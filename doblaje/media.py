@@ -48,3 +48,32 @@ def ffmpeg_disponible() -> bool:
         return True
     except Exception:
         return False
+
+
+def sonoridad(path: Path) -> dict:
+    """Sonoridad integrada (EBU R128) y pico verdadero, con ffmpeg. {I: LUFS, TP: dBFS}; None si no pudo."""
+    r = subprocess.run([C.FFMPEG, "-hide_banner", "-nostats", "-i", str(path), "-af", "ebur128=peak=true:framelog=quiet",
+                        "-f", "null", "-"], capture_output=True, text=True, errors="replace")
+    def ultimo(pat):
+        m = re.findall(pat, r.stderr)
+        return float(m[-1]) if m else None
+    return dict(I=ultimo(r"I:\s*(-?[\d.]+) LUFS"), TP=ultimo(r"Peak:\s*(-?[\d.]+) dBFS"))
+
+
+def igualar_sonoridad(original: Path, audio: Path, dst: Path, tp_max_db: float = C.TP_MAX_DB) -> dict | None:
+    """Deja `dst` con el audio doblado a la MISMA sonoridad integrada que el original y los picos
+    verdaderos por debajo de `tp_max_db`. Medido 11-sep sobre 4 videos: Dubbing v2 entrega ~-7,5 LUFS
+    sea cual sea el original, con la voz +2…+10 dB y picos > 0 dBFS; con esto la voz queda a ±0,5 dB
+    de la original. Devuelve la medición (o None si ffmpeg no pudo medir)."""
+    eo, ed = sonoridad(original), sonoridad(audio)
+    if eo.get("I") is None or ed.get("I") is None:
+        return None
+    gain = eo["I"] - ed["I"]
+    lim = 10 ** (tp_max_db / 20)
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    subprocess.run([C.FFMPEG, "-y", "-v", "error", "-i", str(audio),
+                    "-af", f"volume={gain:.2f}dB,alimiter=limit={lim:.4f}:attack=5:release=50:level=false",
+                    "-ar", "48000", "-c:a", "pcm_s16le", str(dst)], check=True)
+    en = sonoridad(dst)
+    return dict(gain_db=round(gain, 1), I_original=eo["I"], I_antes=ed["I"], I_despues=en.get("I"),
+                tp_antes=ed.get("TP"), tp_despues=en.get("TP"))

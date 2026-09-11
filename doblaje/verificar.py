@@ -78,3 +78,20 @@ def castellano_restante(original: Path, doblado: Path, segmentos: list[dict],
             restantes.append(dict(inicio=round(float(s["start_s"]), 1), fin=round(float(s["end_s"]), 1),
                                   parecido=round(p, 3), texto=(s.get("text") or "")[:80]))
     return dict(segmentos=len(segmentos), medidos=medidos, umbral=umbral, restantes=restantes)
+
+
+def nivel_voz(original: Path, doblado: Path, segmentos: list[dict]) -> float | None:
+    """Cuántos dB está la VOZ doblada por encima (+) o por debajo (-) de la voz original: RMS en la
+    banda de voz (300-3400 Hz) sobre cada segmento declarado, mediana. Es el número que responde
+    "¿se nota diferencia de nivel?": hasta ±2 dB no se oye, más de 3 dB sí. None sin numpy."""
+    if np is None:
+        return None
+    ao, ad = _cargar(original), _cargar(doblado)
+    n = min(len(ao), len(ad)); sr = C.SR_VERIF
+    def db(x): return 20 * np.log10(np.sqrt(np.mean(x ** 2)) + 1e-9)
+    v = []
+    for s in segmentos:
+        i, j = int(float(s["start_s"]) * sr), int(min(float(s["end_s"]) * sr, n))
+        if j - i >= sr // 3:
+            v.append(db(_banda(ad[i:j])) - db(_banda(ao[i:j])))
+    return round(float(np.median(v)), 1) if v else None

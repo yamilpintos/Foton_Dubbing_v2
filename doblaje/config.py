@@ -78,6 +78,10 @@ CONCURRENCIA_ELEVEN = 3                                          # trabajos de d
 UMBRAL = float(os.getenv("DOBLAJE_UMBRAL", "0.28"))              # validado 4/4 contra el oído (7-sep-2026)
 SR_VERIF = 16000
 
+# ---- nivel: igualar la sonoridad del doblado a la del original (v2 sale ~-7,5 LUFS, +5 dB de voz, picos > 0) ----
+NIVELAR = os.getenv("DOBLAJE_NIVELAR", "1") != "0"
+TP_MAX_DB = float(os.getenv("DOBLAJE_TP_MAX", "-1.0"))              # techo de pico verdadero
+
 # ---- subida ----
 MAX_SUBIDA_MB = float(os.getenv("DOBLAJE_MAX_SUBIDA_MB", "200"))
 
