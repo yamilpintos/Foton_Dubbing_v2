@@ -114,8 +114,9 @@ def separar(audio: Path, out_dir: Path, log=None) -> tuple[Path, Path] | None:
 
 
 def mezclar_pistas(voz: Path, fondo: Path, gain_voz_db: float, dst: Path, tp_max_db: float = C.TP_MAX_DB,
-                   silencios: list[tuple[float, float]] | None = None) -> Path:
+                   silencios: list[tuple[float, float]] | None = None, extra: Path | None = None) -> Path:
     """voz doblada (con su corrección) + fondo original a unidad, limitador de picos, 48 kHz.
+    `extra`: pista opcional que se suma a unidad (la voz no verbal ORIGINAL, ver voz_no_verbal).
     `silencios`: tramos (inicio, fin) de la VOZ que se mutean: donde v2 dejó pasar la voz original
     (interjecciones cortas tipo "Say," / "¡Uh!") es mejor el silencio que el idioma equivocado."""
     lim = 10 ** (tp_max_db / 20)
@@ -123,9 +124,14 @@ def mezclar_pistas(voz: Path, fondo: Path, gain_voz_db: float, dst: Path, tp_max
     mudo = ""
     if silencios:
         mudo = "volume=enable='" + "+".join(f"between(t,{a:.2f},{b:.2f})" for a, b in silencios) + "':volume=0,"
-    subprocess.run([C.FFMPEG, "-y", "-v", "error", "-i", str(voz), "-i", str(fondo), "-filter_complex",
-                    f"[0:a]aresample=48000,{mudo}volume={gain_voz_db:.2f}dB[v];[1:a]aresample=48000[f];"
-                    f"[v][f]amix=inputs=2:duration=first:normalize=0,alimiter=limit={lim:.4f}:attack=5:release=50:level=false[a]",
+    entradas = ["-i", str(voz), "-i", str(fondo)] + (["-i", str(extra)] if extra else [])
+    if extra:
+        cadena = (f"[0:a]aresample=48000,{mudo}volume={gain_voz_db:.2f}dB[v];[1:a]aresample=48000[f];[2:a]aresample=48000[x];"
+                  f"[v][f][x]amix=inputs=3:duration=first:normalize=0,alimiter=limit={lim:.4f}:attack=5:release=50:level=false[a]")
+    else:
+        cadena = (f"[0:a]aresample=48000,{mudo}volume={gain_voz_db:.2f}dB[v];[1:a]aresample=48000[f];"
+                  f"[v][f]amix=inputs=2:duration=first:normalize=0,alimiter=limit={lim:.4f}:attack=5:release=50:level=false[a]")
+    subprocess.run([C.FFMPEG, "-y", "-v", "error", *entradas, "-filter_complex", cadena,
                     "-map", "[a]", "-ac", "2", "-ar", "48000", "-c:a", "pcm_s16le", str(dst)], check=True)
     return dst
 
@@ -157,4 +163,29 @@ def parchar_fondo(fondo: Path, tramos: list[tuple[float, float]], dst: Path, fun
     subprocess.run([C.FFMPEG, "-y", "-v", "error", "-f", "s16le", "-ac", "2", "-ar", str(sr), "-i", "-",
                     "-c:a", "pcm_s16le", str(dst)], input=np.clip(x, -32768, 32767).astype(np.int16).tobytes(), check=True)
     tmp.unlink(missing_ok=True)
+    return dst
+
+
+def voz_no_verbal(voz_original: Path, segmentos: list[dict], dst: Path, margen_s: float = 0.2,
+                  fundido_s: float = 0.05) -> Path:
+    """La pista de voz ORIGINAL sólo FUERA de las líneas declaradas: respiraciones, gritos, quejidos,
+    risas… que v2 no reproduce (deja silencio digital) y que el separador puso en la voz. Se le
+    aplica una máscara con fundidos: 1 fuera del habla, 0 dentro (con margen). Sale s16 a 48 kHz."""
+    import numpy as np
+    sr = 48000
+    raw = subprocess.run([C.FFMPEG, "-v", "error", "-i", str(voz_original), "-f", "s16le", "-ac", "2", "-ar", str(sr), "-"],
+                         capture_output=True, check=True).stdout
+    x = np.frombuffer(raw, dtype=np.int16).reshape(-1, 2).astype(np.float32)
+    n = len(x); m = int(margen_s * sr); f = max(1, int(fundido_s * sr))
+    mask = np.ones(n, dtype=np.float32)
+    for s in segmentos:
+        i, j = max(0, int(float(s["start_s"]) * sr) - m), min(n, int(float(s["end_s"]) * sr) + m)
+        if j > i:
+            mask[i:j] = 0.0
+    # fundidos: suavizar la máscara con una rampa de `f` muestras (media móvil)
+    k = np.ones(f, dtype=np.float32) / f
+    mask = np.convolve(mask, k, mode="same")
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    subprocess.run([C.FFMPEG, "-y", "-v", "error", "-f", "s16le", "-ac", "2", "-ar", str(sr), "-i", "-",
+                    "-c:a", "pcm_s16le", str(dst)], input=np.clip(x * mask[:, None], -32768, 32767).astype(np.int16).tobytes(), check=True)
     return dst

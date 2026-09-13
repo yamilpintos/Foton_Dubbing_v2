@@ -569,7 +569,10 @@ def _procesar(t: dict, s: dict):
             if so and sd:
                 off = verificar.nivel_voz(so[0], sd[0], segs)
                 gain_voz = -(off or 0.0)
-                media.mezclar_pistas(sd[0], so[1], gain_voz, wdir / "doblado.wav")
+                # ★ lo no verbal (respiraciones, gritos, risas) v2 lo deja en silencio digital: fuera de las
+                #   líneas declaradas se suma la voz ORIGINAL con fundidos, como hace el motor (keep_original).
+                no_verbal = media.voz_no_verbal(so[0], segs, wdir / "voz_no_verbal.wav")
+                media.mezclar_pistas(sd[0], so[1], gain_voz, wdir / "doblado.wav", extra=no_verbal)
                 wav = wdir / "doblado.wav"
                 # ★ restos cortos de la voz original (interjecciones tipo "Say," / "¡Uh!" que v2 deja pasar):
                 #   se mutean en la voz doblada y, como el separador suele dejarlos en el AMBIENTE, se
@@ -578,7 +581,7 @@ def _procesar(t: dict, s: dict):
                 cortos = [(r["inicio"], r["fin"]) for r in (v0 or {}).get("restantes", []) if r["fin"] - r["inicio"] <= 1.5]
                 if cortos:
                     fondo_p = media.parchar_fondo(so[1], cortos, wdir / "fondo_parchado.wav")
-                    media.mezclar_pistas(sd[0], fondo_p, gain_voz, wav, silencios=cortos)
+                    media.mezclar_pistas(sd[0], fondo_p, gain_voz, wav, silencios=cortos, extra=no_verbal)
                     log(f"restos cortos de la voz original tapados: {', '.join(f'{a:.1f}-{b:.1f}s' for a, b in cortos)}")
                 e_o, e_n = media.sonoridad(local), media.sonoridad(wav)
                 nivel = dict(modo="pistas", gain_db=round(gain_voz, 1), I_original=e_o.get("I"), I_antes=media.sonoridad(wav_crudo).get("I"),
