@@ -436,6 +436,7 @@ async function pollTrabajos(){
         if(ver===null||ver===undefined){ if(inf.segmentos!=null) chips+=`<span class="w">sin verificar</span>`; }
         else if(ver.restantes&&ver.restantes.length) chips += `<span class="w" title="${esc(ver.restantes.map(r=>r.inicio+'s: '+r.texto).join(' · '))}">⚠ ${ver.restantes.length} segmento${ver.restantes.length===1?'':'s'} con el original: ${esc(ver.restantes.map(r=>r.inicio+'s').join(', '))}</span>`;
         else chips += `<span>✓ ${ver.segmentos} segmentos, ninguno con el original</span>`;
+        const fl = inf.nivel && inf.nivel.filtracion; if(fl && fl.filtradas && fl.filtradas.length) chips += `<span class="w" title="${esc(fl.filtradas.map(x=>x.inicio+'s: '+x.db+' dB · '+x.texto).join(' · '))}">⚠ original audible detrás en ${fl.filtradas.length} línea${fl.filtradas.length===1?'':'s'}: ${esc(fl.filtradas.map(x=>x.inicio+'s').join(', '))}</span>`;
       }
       return `<div class="job ${cls}"><div class="h"><span class="nm" title="${esc(t.nombre)}">${esc(t.nombre)}</span><span class="st ${cls}">${esc(t.estado)}</span></div>
         <div class="bar"><i style="width:${Math.round((t.progreso||0)*100)}%"></i></div>

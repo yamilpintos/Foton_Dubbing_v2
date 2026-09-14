@@ -586,6 +586,13 @@ def _procesar(t: dict, s: dict):
                 e_o, e_n = media.sonoridad(local), media.sonoridad(wav)
                 nivel = dict(modo="pistas", gain_db=round(gain_voz, 1), I_original=e_o.get("I"), I_antes=media.sonoridad(wav_crudo).get("I"),
                              I_despues=e_n.get("I"), tp_antes=None, tp_despues=e_n.get("TP"))
+                # ★ el original que se oye POR DEBAJO de la voz nueva (no lo ve el detector de parecido)
+                filt = verificar.filtracion_voz(so[0], sd[0], segs)
+                nivel["filtracion"] = filt
+                if filt and filt["filtradas"]:
+                    log(f"original audible detrás de la voz nueva en {len(filt['filtradas'])} líneas (> {filt['umbral_db']} dB): "
+                        + ", ".join(f"{x['inicio']}s ({x['db']} dB)" for x in filt["filtradas"][:8])
+                        + " · con edición habilitada se re-traducen y regeneran gratis; sin ella, re-doblar con clonación más baja")
                 log(f"pistas: voz doblada {off:+.1f} dB respecto de la voz original → corregida {gain_voz:+.1f} dB; fondo = el original")
             else:
                 log("no pude separar: caigo al modo mezcla")
@@ -648,7 +655,8 @@ def _procesar(t: dict, s: dict):
             log(f"subiendo {p.name}")
             t["salidas"].append(dict(nombre=p.name, id=drive.subir(d, p, cid)))
             t["progreso"] = 0.90 + 0.10 * (k + 1) / 2
-        t["estado"] = "listo" if (ver is None or not ver["restantes"]) else "revisar"
+        filtradas = ((nivel or {}).get("filtracion") or {}).get("filtradas") or []
+        t["estado"] = "listo" if (ver is None or not ver["restantes"]) and not filtradas else "revisar"
         etapa("fin", 1.0)
     except Exception as e:
         if isinstance(e, DubbingError) and str(e) == "cancelado":

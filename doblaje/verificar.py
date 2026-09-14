@@ -114,3 +114,39 @@ def nivel_fondo(original: Path, doblado: Path, segmentos: list[dict]) -> float |
     f = [db(ad[i:i + w]) - db(ao[i:i + w]) for i in range(0, n - w, w)
          if not ocupado[i:i + w].any() and db(ao[i:i + w]) > -55]
     return round(float(np.median(f)), 1) if len(f) >= 4 else None
+
+
+def filtracion_voz(voz_original: Path, doblado: Path, segmentos: list[dict], umbral_db: float = -14.0) -> dict | None:
+    """Cuánto de la voz ORIGINAL se oye POR DEBAJO de la voz doblada, por segmento (el segundo modo de
+    fallo de v2: "se escucha el inglés detrás"). El detector de parecido no lo ve porque la voz nueva,
+    más fuerte, domina. Acá se estima la ganancia del original dentro del doblado por mínimos cuadrados
+    con búsqueda de desfasaje (±25 ms), en banda de voz. Referencia ideal: la pista de voz original
+    separada; con la mezcla original también sirve, algo sesgado por el fondo común.
+    Escala medida 13-sep: > −14 dB se oye claramente detrás · −14…−20 se intuye · < −20 limpio.
+    Devuelve dict(mediana, p90, filtradas=[{inicio, fin, db, texto}]) o None sin numpy."""
+    if np is None:
+        return None
+    o, d = _cargar(voz_original), _cargar(doblado)
+    n = min(len(o), len(d)); sr = C.SR_VERIF; maxlag = int(0.025 * sr)
+    valores, filtradas = [], []
+    for s in segmentos:
+        i, j = int(float(s["start_s"]) * sr), int(min(float(s["end_s"]) * sr, n))
+        if j - i < sr // 3:
+            continue
+        ob = _banda(o[i:j] - o[i:j].mean()); db_ = _banda(d[i:j] - d[i:j].mean())
+        if np.dot(ob, ob) < 1e-9:
+            continue
+        mejor = 0.0
+        for lag in range(-maxlag, maxlag + 1, 4):
+            oo, dd = (ob[:len(ob) - lag], db_[lag:]) if lag >= 0 else (ob[-lag:], db_[:len(db_) + lag])
+            g = float(np.dot(dd, oo) / np.dot(oo, oo))
+            if abs(g) > abs(mejor):
+                mejor = g
+        v = 20 * np.log10(abs(mejor) + 1e-9); valores.append(v)
+        if v > umbral_db:
+            filtradas.append(dict(inicio=round(float(s["start_s"]), 1), fin=round(float(s["end_s"]), 1),
+                                  db=round(float(v), 1), texto=(s.get("text") or "")[:80]))
+    if not valores:
+        return None
+    return dict(mediana=round(float(np.median(valores)), 1), p90=round(float(np.percentile(valores, 90)), 1),
+                umbral_db=umbral_db, filtradas=filtradas)
