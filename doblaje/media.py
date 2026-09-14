@@ -189,3 +189,42 @@ def voz_no_verbal(voz_original: Path, segmentos: list[dict], dst: Path, margen_s
     subprocess.run([C.FFMPEG, "-y", "-v", "error", "-f", "s16le", "-ac", "2", "-ar", str(sr), "-i", "-",
                     "-c:a", "pcm_s16le", str(dst)], input=np.clip(x * mask[:, None], -32768, 32767).astype(np.int16).tobytes(), check=True)
     return dst
+
+
+def ajustar_ventana(segmentos: list[dict], inicio: float, fin: float, hueco_min: float = 0.25,
+                    fin_hacia: str = "adelante") -> tuple[float, float]:
+    """Mueve los bordes de una ventana a huecos entre lineas, para que un parche nunca corte una linea por la mitad.
+
+    Un corte adentro de una linea deja la misma linea dicha dos veces (el parche y el doblado anterior superpuestos).
+    `inicio` retrocede al hueco anterior a la linea que lo contiene; `fin` avanza al hueco posterior
+    (o retrocede, con fin_hacia="atras", cuando el parche ya existe y no puede alargarse).
+    Un hueco vale si dura al menos `hueco_min`; el corte cae en su punto medio.
+    """
+    lineas = sorted((float(s["start_s"]), float(s["end_s"])) for s in segmentos)
+    huecos = []
+    prev = None
+    for a, b in lineas:
+        if prev is not None and a - prev >= hueco_min:
+            huecos.append((prev, a))
+        prev = max(prev or 0.0, b)
+    ultimo = prev or 0.0
+
+    def dentro(t):
+        return next(((a, b) for a, b in lineas if a < t < b), None)
+
+    ini = float(inicio)
+    while (l := dentro(ini)) is not None:
+        prevs = [h for h in huecos if h[1] <= l[0] + 1e-6]
+        if not prevs:
+            ini = 0.0
+            break
+        ini = sum(prevs[-1]) / 2
+    f = float(fin)
+    while (l := dentro(f)) is not None:
+        if fin_hacia == "adelante":
+            nexts = [h for h in huecos if h[0] >= l[1] - 1e-6]
+            f = sum(nexts[0]) / 2 if nexts else ultimo + hueco_min
+        else:
+            prevs = [h for h in huecos if h[1] <= l[0] + 1e-6]
+            f = sum(prevs[-1]) / 2 if prevs else 0.0
+    return round(ini, 2), round(f, 2)
