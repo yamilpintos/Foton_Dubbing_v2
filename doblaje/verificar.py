@@ -116,18 +116,20 @@ def nivel_fondo(original: Path, doblado: Path, segmentos: list[dict]) -> float |
     return round(float(np.median(f)), 1) if len(f) >= 4 else None
 
 
-def filtracion_voz(voz_original: Path, doblado: Path, segmentos: list[dict], umbral_db: float = -14.0) -> dict | None:
+def filtracion_voz(voz_original: Path, doblado: Path, segmentos: list[dict], umbral_db: float = -14.0,
+                   maxlag_s: float = 0.3) -> dict | None:
     """Cuánto de la voz ORIGINAL se oye POR DEBAJO de la voz doblada, por segmento (el segundo modo de
     fallo de v2: "se escucha el inglés detrás"). El detector de parecido no lo ve porque la voz nueva,
     más fuerte, domina. Acá se estima la ganancia del original dentro del doblado por mínimos cuadrados
-    con búsqueda de desfasaje (±25 ms), en banda de voz. Referencia ideal: la pista de voz original
+    con búsqueda de desfasaje (±300 ms: v2 copia el original corrido ~110 ms; con ±25 ms
+    se lo perdía, 13-sep), en banda de voz. Referencia ideal: la pista de voz original
     separada; con la mezcla original también sirve, algo sesgado por el fondo común.
     Escala medida 13-sep: > −14 dB se oye claramente detrás · −14…−20 se intuye · < −20 limpio.
     Devuelve dict(mediana, p90, filtradas=[{inicio, fin, db, texto}]) o None sin numpy."""
     if np is None:
         return None
     o, d = _cargar(voz_original), _cargar(doblado)
-    n = min(len(o), len(d)); sr = C.SR_VERIF; maxlag = int(0.025 * sr)
+    n = min(len(o), len(d)); sr = C.SR_VERIF; maxlag = int(maxlag_s * sr)
     valores, filtradas = [], []
     for s in segmentos:
         i, j = int(float(s["start_s"]) * sr), int(min(float(s["end_s"]) * sr, n))
@@ -136,9 +138,15 @@ def filtracion_voz(voz_original: Path, doblado: Path, segmentos: list[dict], umb
         ob = _banda(o[i:j] - o[i:j].mean()); db_ = _banda(d[i:j] - d[i:j].mean())
         if np.dot(ob, ob) < 1e-9:
             continue
+        # correlacion cruzada por FFT: el original copiado puede venir corrido hasta ~300 ms detras de la voz nueva
+        nfft = 1 << int(np.ceil(np.log2(len(ob) + maxlag + 1)))
+        c = np.fft.irfft(np.fft.rfft(db_, nfft) * np.conj(np.fft.rfft(ob, nfft)), nfft)
+        c = np.concatenate([c[-maxlag:], c[:maxlag + 1]])  # indice k -> lag k - maxlag
         mejor = 0.0
-        for lag in range(-maxlag, maxlag + 1, 4):
+        for lag in sorted(range(-maxlag, maxlag + 1), key=lambda k: -abs(c[k + maxlag]))[:5]:
             oo, dd = (ob[:len(ob) - lag], db_[lag:]) if lag >= 0 else (ob[-lag:], db_[:len(db_) + lag])
+            if np.dot(oo, oo) < 1e-9:
+                continue
             g = float(np.dot(dd, oo) / np.dot(oo, oo))
             if abs(g) > abs(mejor):
                 mejor = g
